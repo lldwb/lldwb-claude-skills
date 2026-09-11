@@ -70,6 +70,17 @@ _ensure_utf8()
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_TASKS = os.path.join(SCRIPT_DIR, "..", ".tasks", "check-controller")
 
+# Excel 公式注入防护：以 = + - @ 开头的文本会被 Excel 当作公式（含 DDE 之类
+# 外部调用）；写入单元格前前置单引号强制按文本处理，单引号本身不显示。
+_FORMULA_PREFIX = ("=", "+", "-", "@")
+
+
+def safe_text(v):
+    """写入 xlsx 单元格前的中和：公式前缀开头的字符串加单引号，其余原样返回。"""
+    if isinstance(v, str) and v.startswith(_FORMULA_PREFIX):
+        return "'" + v
+    return v
+
 # 内置通用默认模板（无项目专属列；项目需对接既有表格样式时用 --template 覆盖）
 DEFAULT_TEMPLATE = {
     "header_rows": 1,
@@ -219,7 +230,7 @@ def build_xlsx(rows, out_path, source, tpl):
     # header_rows=2：第 1 行分组提示行（无边框），第 2 行表头；否则仅 1 行表头
     if header_rows >= 2:
         for col, val in row1.items():
-            c = ws.cell(row=1, column=col, value=val)
+            c = ws.cell(row=1, column=col, value=safe_text(val))
             c.font = font
             c.alignment = center
         ws.row_dimensions[1].height = 99
@@ -241,7 +252,7 @@ def build_xlsx(rows, out_path, source, tpl):
     for i, r in enumerate(rows, start=data_start):
         for k, col in enumerate(field_cols):
             if k < len(r):
-                c = ws.cell(row=i, column=col, value=r[k])
+                c = ws.cell(row=i, column=col, value=safe_text(r[k]))
                 c.font = font
                 c.alignment = vcenter_wrap if col in (9, 10) else vcenter
         if system_cols:
