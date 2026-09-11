@@ -1,7 +1,7 @@
-# 可复用 Claude Skills
+# lldwb-claude-skills
 
-从业务项目实践中抽象出的 6 个通用工作流技能（Agent Skills），供其他项目复用。
-每个技能是一个自包含目录，含 `SKILL.md`（frontmatter: `name` + `description`）及所需的脚本/参考文件。
+从业务项目实践中抽象出的 7 个通用工作流技能（Agent Skills），供其他项目复用。
+每个技能是一个自包含目录，含 `SKILL.md`（frontmatter: `name` + `description`）及所需的脚本/参考文件/README。
 
 ## 技能列表
 
@@ -18,19 +18,37 @@
 ## 目录结构
 
 ```
-skills/
-├── <skill-name>/
-│   ├── SKILL.md            # 技能指令（frontmatter: name + description）
-│   ├── scripts/            # 取数/辅助脚本（可选）
-│   └── references/         # 配置模板/子代理提示词等参考文件（可选）
+lldwb-claude-skills/
+├── skills/                   # 技能集合（每个技能一个子目录）
+│   └── <skill-name>/
+│       ├── SKILL.md          # 技能指令（frontmatter: name + description）
+│       ├── README.md         # 技能简介、用法、文件与依赖说明
+│       ├── scripts/          # 取数/辅助脚本（可选）
+│       └── references/       # 配置模板/子代理提示词等参考文件（可选）
+├── .claude-plugin/           # Plugin marketplace 定义
+│   └── marketplace.json
+├── config.json               # 技能启用配置（install 脚本按此安装）
+├── install.py / install.sh / install.bat   # 安装到 ~/.claude/skills/
+├── uninstall.py / uninstall.sh / uninstall.bat  # 卸载
+├── PLUGIN_README.md          # 插件使用说明
+├── CHANGELOG.md
+├── README.md
+└── LICENSE
 ```
 
 ## 安装到 Claude Code
 
-方式一：复制到用户级 skills 目录（每个技能一个子目录）
+方式一：安装脚本（按 `config.json` 启用清单复制到 `~/.claude/skills/`）
 
 ```bash
-cp -r skills/* ~/.claude/skills/
+# Windows
+install.bat
+# macOS / Linux
+./install.sh
+# 指定技能 / 预览
+python install.py fix-bug
+python install.py --dry-run
+python install.py --list
 ```
 
 方式二：注册为 Plugin marketplace，安装 dev-skills 插件（支持后续拉取更新）
@@ -41,12 +59,12 @@ cp -r skills/* ~/.claude/skills/
 /plugin install dev-skills@lldwb-claude-skills
 ```
 
-插件安装后即可按技能名直接使用（如 "修复这个 bug" / "评审提交 abc1234" / "按 trace_id 排查日志"）。
+安装后即可按技能名直接使用（如 "修复这个 bug" / "评审提交 abc1234" / "按 trace_id 排查日志"）。详见 `PLUGIN_README.md`。
 
 ## 使用注意
 
 - 各技能为通用模板，正文中的占位符（`<skill 目录>`、`<模块>` 等）由调用时按项目实际情况填充。
-- 敏感配置（如 `log-diagnose.config.json` 的 Kibana 凭据）不入库，按 `references/config.example.json` 模板在本地创建。
+- 敏感配置（如 `log-diagnose.config.json` 的 Kibana 凭据、`db-query.config.json` 的数据库密码）不入库，按各技能 `references/config.example.json` 模板在本地创建。
 - 提交信息规范以各项目开发手册 / `AGENTS.md` 为权威依据，技能内仅保留通用约定。
 
 ## License
