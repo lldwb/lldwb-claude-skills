@@ -35,6 +35,12 @@ def _ensure_utf8():
 
 _ensure_utf8()
 
+
+def die(msg, code=1):
+    print("ERROR: " + msg, file=sys.stderr)
+    sys.exit(code)
+
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(ROOT, "config.json")
 HOME = os.path.expanduser("~")
@@ -47,6 +53,23 @@ def load_skill_names():
             cfg = json.load(f)
         return list(cfg.get("skills", {}).keys())
     return []
+
+
+def safe_skill_dir(base_dir, name):
+    """把技能名解析为 base_dir 下的直接子目录路径。
+    技能名来自命令行，必须校验：os.path.join 遇绝对路径会直接丢弃 base_dir，
+    不校验时后续 rmtree 可能删掉技能目录之外的任意目录。"""
+    if not name or name in (".", ".."):
+        die("非法技能名: %r" % name)
+    if "\\" in name or "/" in name:
+        die("非法技能名（不得包含路径分隔符）: %r" % name)
+    if os.path.isabs(name) or os.path.splitdrive(name)[0]:
+        die("非法技能名（不得为绝对路径或含盘符）: %r" % name)
+    base = os.path.abspath(base_dir)
+    target = os.path.abspath(os.path.join(base, name))
+    if os.path.dirname(target) != base:
+        die("技能名越出技能目录: %r" % name)
+    return target
 
 
 def main():
@@ -64,11 +87,11 @@ def main():
 
     removed = []
     for name in names:
-        dst = os.path.join(TARGET_DIR, name)
+        dst = safe_skill_dir(TARGET_DIR, name)
         if os.path.isdir(dst):
+            print("删除: %s" % dst)
             shutil.rmtree(dst)
             removed.append(name)
-            print("已删除: %s" % dst)
         else:
             print("未安装或已删除: %s" % dst)
     print("共卸载 %d 个" % len(removed))
