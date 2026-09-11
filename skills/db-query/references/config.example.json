@@ -1,0 +1,29 @@
+{
+  "default_env": "test",
+  "environments": {
+    "test": {
+      "name": "测试环境",
+      "hosts": ["<ip>"],
+      "port": 8000,
+      "database": "<database>",
+      "schema": "<schema>",
+      "username": "<user>",
+      "password": "<password>",
+      "read_only": false,
+      "default_limit": 100,
+      "statement_timeout": 60
+    },
+    "prod": {
+      "name": "生产环境",
+      "hosts": ["<ip>"],
+      "port": 8000,
+      "database": "<database>",
+      "schema": "<schema>",
+      "username": "<user_read_only>",
+      "password": "<password>",
+      "read_only": true,
+      "default_limit": 100,
+      "statement_timeout": 60
+    }
+  }
+}

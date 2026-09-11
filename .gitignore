@@ -10,3 +10,8 @@ __pycache__/
 # 本地下载/临时文件
 Downloads/
 *.tmp
+
+# IDE
+.idea/
+.vscode/
+*.iml

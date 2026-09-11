@@ -11,6 +11,7 @@
 | code-optimize | 代码优化工作流：SSOT、保持对外行为不变、commit 专员式提交 | — |
 | commit-review | 提交评审：取数落盘 → 探索调用链 → 分层/契约/@Deprecated 检查，只检查不改代码 | scripts/check-commit.py |
 | log-diagnose | 日志自动诊断：按 trace_id + 时间窗从 Kibana 拉日志、六类故障分类法、BUG 时产出双 MD（修复任务 + 事故报告） | scripts/log-diagnose.py、references/config.example.json |
+| db-query | 数据库查询：生产只读（三重保障）、测试写需用户确认，安全铁律（禁 select *、单条语句、控制数据量） | scripts/db-query.py、references/config.example.json |
 | module-batch | 多模块并行改造：worktree 隔离 + 并行子代理 + 合并回主分支，含中断处理与经验教训速查 | — |
 | controller-check | Controller 校验规则提取：协调调度子代理逐 Controller 追溯，按「模块→菜单→权限点→操作」模板合并输出文档 | references/extract-agent.md |
 

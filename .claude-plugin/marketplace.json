@@ -7,12 +7,13 @@
   "plugins": [
     {
       "name": "dev-skills",
-      "description": "通用开发工作流技能：bug 修复、代码优化、提交评审、日志诊断、多模块并行改造、Controller 校验规则提取",
+      "description": "通用开发工作流技能：bug 修复、代码优化、提交评审、日志诊断、数据库查询、多模块并行改造、Controller 校验规则提取",
       "skills": [
         "fix-bug",
         "code-optimize",
         "commit-review",
         "log-diagnose",
+        "db-query",
         "module-batch",
         "controller-check"
       ],
