@@ -237,6 +237,10 @@ def build_query(kws, gte, lte, size):
 
 def search_es(cfg, kws, gte, lte):
     """单次 /internal/search/es（已验证的单 params 格式；batch 格式会忽略 body）。"""
+    host = cfg["kibana"]["host"]
+    if host.lower().startswith("http://"):
+        print("警告: Kibana 地址为 http://，Basic 认证凭据（base64）将明文传输；"
+              "生产环境建议改用 https://", file=sys.stderr)
     body = {
         "params": {
             "index": cfg["index_pattern"],
@@ -244,7 +248,7 @@ def search_es(cfg, kws, gte, lte):
         }
     }
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    url = cfg["kibana"]["host"].rstrip("/") + "/internal/search/es"
+    url = host.rstrip("/") + "/internal/search/es"
     req = urllib.request.Request(url, data=data, method="POST")
     req.add_header("Content-Type", "application/json")
     req.add_header("kbn-xsrf", "true")

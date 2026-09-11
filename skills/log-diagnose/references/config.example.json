@@ -4,7 +4,7 @@
     "prod": {
       "name": "生产环境",
       "kibana": {
-        "host": "http://<ip>:5601",
+        "host": "https://<ip>:5601",
         "username": "elastic",
         "password": "<password>"
       },
@@ -16,7 +16,7 @@
     "test": {
       "name": "测试环境",
       "kibana": {
-        "host": "http://<ip>:5601",
+        "host": "https://<ip>:5601",
         "username": "elastic",
         "password": "<password>"
       },
