@@ -24,6 +24,8 @@
 
 按加载顺序取用：① `--config <路径>`；② 项目级 `<项目根>/.claude/log-diagnose.config.json`（脚本从当前工作目录向上查找）；③ skill 同级默认。项目级配置适合不同项目接不同 Kibana 的场景，全局默认兜底。
 
+**输出路径按配置来源决定**（与配置归属一致）：显式 `--config` → `~/Downloads/log-diagnosis/<env>/`；项目级配置 → `<项目根>/.tasks/log-diagnosis/<env>/`；全局默认 → `~/.claude/.tasks/log-diagnosis/<env>/`；可用 `--out-dir <路径>` 显式覆盖。
+
 ## 依赖
 
 - Python 3

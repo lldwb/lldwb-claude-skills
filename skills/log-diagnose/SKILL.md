@@ -20,7 +20,7 @@ description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环�
    ```
    - 缺省取配置 `default_env`；切环境加 `--env <环境名>`。
    - 查看可用环境：`python <skill 目录>/scripts/log-diagnose.py --list-envs`
-   - 脚本按**配置加载顺序**取配置：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/log-diagnose.config.json`（从当前工作目录向上查找，实现不同项目不同 Kibana 环境切换）；③ skill 同级默认 `log-diagnose.config.json`。配置均 gitignored，敏感凭据不入库，按 `references/config.example.json` 模板创建。输出到 `.tasks/log-diagnosis/<env>/<trace_id>.summary.txt` 与 `.raw.json`。
+   - 脚本按**配置加载顺序**取配置：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/log-diagnose.config.json`（从当前工作目录向上查找，实现不同项目不同 Kibana 环境切换）；③ skill 同级默认 `log-diagnose.config.json`。配置均 gitignored，敏感凭据不入库，按 `references/config.example.json` 模板创建。**输出路径按配置来源决定**（与配置归属一致）：显式 `--config` → `~/Downloads/`；项目级配置 → `<项目根>/.tasks/`；全局默认 → `~/.claude/.tasks/`；均再拼 `log-diagnosis/<env>/`，产物为 `<trace_id>.summary.txt` 与 `.raw.json`；可用 `--out-dir <路径>` 显式覆盖。
    - 若提示"无日志命中"：确认时间窗已覆盖日志保留期（如 30 天）重试一次；仍无则向用户报告该 trace 未落当前环境（`<env>`）日志，停止。
    - 若提示配置缺失：向用户报告需创建配置（schema 见脚本报错或 `references/config.example.json`），停止。
 3. 读取 `summary.txt`：先看头部 `total_matched` 与截断告警；浏览"时序摘要"；重点读"全量 ERROR 消息"段。必要时读 `.raw.json` 取完整 message。
@@ -54,7 +54,11 @@ description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环�
 
 ## 产出（仅 BUG 使用）：两份 MD
 
-判定为 BUG 时产出**两份单独 MD**（存 `.tasks/log-diagnosis/<env>/`，与拉取环境一致）：
+判定为 BUG 时产出**两份单独 MD**，存放目录**按配置来源决定**（与配置归属一致）：
+- 显式 `--config <路径>` → `~/Downloads/log-diagnosis/<env>/`
+- 项目级配置 → `<项目根>/.tasks/log-diagnosis/<env>/`
+- 全局默认 → `~/.claude/.tasks/log-diagnosis/<env>/`
+- 亦可用 `--out-dir <路径>` 显式覆盖
 
 1. **修复任务 MD**：文件名 `<yyyyMMdd-HHmmss>-<trace_id>.md`，按下述【修复任务 MD 模板】。供派发使用。
 2. **事故报告 MD**：文件名 `<yyyyMMdd-HHmmss>-<trace_id>-事故报告.md`，按下述【事故报告 MD 模板】。独立文档，**须与【根因判定】保持一致，不得引入单次诊断之外的新结论**。
@@ -118,7 +122,7 @@ bug 描述（附带修复所需信息）：
 
 ### 事故报告 MD 模板
 
-文件名：`<yyyyMMdd-HHmmss>-<trace_id>-事故报告.md`，存 `.tasks/log-diagnosis/<env>/`（与拉取环境一致）。作为**独立文档**与修复任务 MD 一并产出：
+文件名：`<yyyyMMdd-HHmmss>-<trace_id>-事故报告.md`，存目录按配置来源（见【产出】小节）。作为**独立文档**与修复任务 MD 一并产出：
 
 ````markdown
 # <项目名> <yyyy-MM-dd> <一句话事故标题>事故报告
