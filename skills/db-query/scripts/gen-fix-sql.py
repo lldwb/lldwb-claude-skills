@@ -27,7 +27,9 @@
 
 安全:
     - 仅生成 SQL 文本，不连接数据库、不执行任何语句
-    - id 重复、值为空、值含未转义引号等情况直接报错中止，不静默生成
+    - 表名/列名/备份表后缀必须是合法标识符；id 必须匹配 --id-re（json 与 txt 输入一致）
+    - id 与值统一按标准 SQL 转义（单引号翻倍），并显式 SET standard_conforming_strings = on
+    - id 重复、值为空、id 不匹配 --id-re 等情况直接报错中止，不静默生成
 """
 import sys
 import os
@@ -37,12 +39,15 @@ import time
 import argparse
 
 import db_common
-from db_common import die
+from db_common import die, check_ident
 
 _DEFAULT_ID_RE = r"^[0-9a-fA-F]{32}$|^[0-9]+$"
 
 
-def read_rows_json(path, id_col, set_col):
+def read_rows_json(path, id_col, set_col, id_re):
+    """读 JSON 结果。id 必须匹配 --id-re——与 txt 路径同样校验，
+    防止异常 id 值被拼接进生成的 SQL。"""
+    pat = re.compile(id_re)
     with open(path, "r", encoding="utf-8-sig") as f:
         data = json.load(f)
     if not isinstance(data, list):
@@ -57,6 +62,9 @@ def read_rows_json(path, id_col, set_col):
         val = str(rec[set_col]).strip()
         if not rid or val.lower() == "none" and rec[set_col] is None:
             die("第 %d 行 id 为空" % (i + 1))
+        if not pat.match(rid):
+            die("第 %d 行 id 不匹配 --id-re（%s）: %r\n"
+                "如 id 形态特殊，请按实际形态调整 --id-re 后重试" % (i + 1, id_re, rid[:60]))
         rows.append((rid, val))
     return rows
 
@@ -94,7 +102,8 @@ def main():
     ap.add_argument("--filter", required=True, help="过滤条件（用于备份表与 update 的 where），如 project_id='xxx'")
     ap.add_argument("--id-col", default="id", help="id 列名（json 输入用；txt 输入取每行首段）")
     ap.add_argument("--id-re", default=_DEFAULT_ID_RE,
-                    help="txt 输入时 id 段的匹配正则（默认 UUID 或纯数字），防止把列头等行当数据")
+                    help="id 的匹配正则（默认 UUID 或纯数字）；txt 与 json 输入均校验，"
+                         "防止列头等行被当数据、也防止异常 id 值被拼进 SQL")
     ap.add_argument("--bak-suffix", default=time.strftime("%Y%m%d"),
                     help="备份表名后缀，默认今天 yyyyMMdd")
     ap.add_argument("--out", default=None, help="输出 SQL 路径（缺省: 结果文件同目录 fix_<table>_<suffix>.sql）")
@@ -104,10 +113,15 @@ def main():
         die("结果文件不存在: %s" % args.result)
     if ";" in args.filter:
         die("过滤条件中不允许出现分号")
+    # 拼进 SQL 的标识符先校验（表名/列名独立出现；备份表后缀嵌在 bak_<后缀>_<表> 中间）
+    check_ident(args.table, "--table")
+    check_ident(args.set_col, "--set-col")
+    check_ident(args.id_col, "--id-col")
+    check_ident(args.bak_suffix, "--bak-suffix", allow_leading_digit=True)
 
     ext = os.path.splitext(args.result)[1].lower()
     if ext == ".json":
-        rows = read_rows_json(args.result, args.id_col, args.set_col)
+        rows = read_rows_json(args.result, args.id_col, args.set_col, args.id_re)
     else:
         rows = read_rows_txt(args.result, args.id_col, args.set_col, args.id_re)
     if not rows:
@@ -135,14 +149,18 @@ def main():
 
     lines = ["-- 由 gen-fix-sql.py 生成: %s 行 update（%s.%s <- %s）" % (
         len(rows), args.table, args.set_col, os.path.basename(args.result))]
+    lines.append("-- id 与值均按标准 SQL 转义（单引号翻倍）；显式声明字符串模式以保证确定性")
+    lines.append("SET standard_conforming_strings = on;")
+    lines.append("")
     lines.append("CREATE TABLE bak_%s_%s AS" % (args.bak_suffix, args.table))
     lines.append("SELECT * FROM %s WHERE %s;" % (args.table, args.filter))
     lines.append("")
     lines.append("begin;")
     for rid, val in rows:
         esc_val = val.replace("'", "''")
+        esc_rid = rid.replace("'", "''")
         lines.append("update %s set %s = '%s' where %s = '%s' and %s;" % (
-            args.table, args.set_col, esc_val, args.id_col, rid, args.filter))
+            args.table, args.set_col, esc_val, args.id_col, esc_rid, args.filter))
     lines.append("commit;")
 
     with open(out, "w", encoding="utf-8") as f:

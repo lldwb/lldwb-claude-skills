@@ -1,0 +1,3 @@
+# db-query 技能的 Python 依赖（其余脚本仅用标准库）
+# 安装: pip install -r requirements.txt
+psycopg2-binary>=2.9,<3

@@ -39,14 +39,31 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, "..", "db-query.config.json")
 CONFIG_FILENAME = "db-query.config.json"
 
-# 只读语句白名单。WITH 开头的 CTE 单独判断是否内嵌写操作。
+# 只读语句白名单。EXPLAIN 前缀与 WITH 开头的 CTE 单独判定。
 _READ_ONLY_HEAD_RE = re.compile(
-    r"^\s*(?:SELECT|SHOW|EXPLAIN|DESCRIBE|VALUES|TABLE)\b", re.IGNORECASE)
+    r"^\s*(?:SELECT|SHOW|DESCRIBE|VALUES|TABLE)\b", re.IGNORECASE)
 _WITH_HEAD_RE = re.compile(r"^\s*WITH\b", re.IGNORECASE)
 # 写操作关键字（用于判定 WITH 内嵌写 / 报错文案加固）
 _WRITE_KW_RE = re.compile(
     r"\b(?:INSERT|UPDATE|DELETE|MERGE|UPSERT|CREATE|ALTER|DROP|TRUNCATE|"
     r"GRANT|REVOKE|COMMENT|CALL|VACUUM|REINDEX|REFRESH|RENAME|COPY|MOVE)\b",
+    re.IGNORECASE)
+# EXPLAIN 前缀：(ANALYZE, BUFFERS) 选项与 ANALYZE|VERBOSE 关键字剥掉后，
+# 按被解释的语句本身判定——EXPLAIN ANALYZE 会真实执行该语句。
+_EXPLAIN_HEAD_RE = re.compile(r"^\s*EXPLAIN\b(.*)$", re.IGNORECASE | re.S)
+_EXPLAIN_OPTS_RE = re.compile(r"^\s*\((?:[^()]|\([^()]*\))*\)\s*")
+_EXPLAIN_KW_RE = re.compile(r"^(?:ANALYZE|ANALYSE|VERBOSE)\b\s*", re.IGNORECASE)
+# 只读关键字开头、但带写或敏感副作用的形态，一律按写处理：
+#   SELECT ... INTO <table>（建表）、nextval/setval（推进序列）、
+#   pg_terminate_backend 等后端管理函数、lo_import/lo_unlink/lo_put（大对象）、
+#   dblink_exec（远端执行）、pg_read_file 等（读服务器文件）、
+#   FOR UPDATE / FOR SHARE 系列（行锁）
+_SIDE_EFFECT_RE = re.compile(
+    r"\bINTO\b|\b(?:nextval|setval)\s*\(|pg_terminate_backend|pg_cancel_backend|"
+    r"pg_reload_conf|pg_rotate_logfile|pg_switch_wal|pg_create_restore_point|"
+    r"pg_stat_reset|lo_import|lo_unlink|lo_put|dblink_exec|"
+    r"pg_read_file|pg_read_binary_file|pg_ls_dir|"
+    r"\bFOR\s+(?:NO\s+KEY\s+|KEY\s+)?(?:UPDATE|SHARE)\b",
     re.IGNORECASE)
 # 会话级语句：不写数据、不改表结构，生产/测试均放行
 _SESSION_HEAD_RE = re.compile(r"^\s*(?:SET|BEGIN|COMMIT|ROLLBACK|RESET)\b", re.IGNORECASE)
@@ -55,6 +72,23 @@ _SESSION_HEAD_RE = re.compile(r"^\s*(?:SET|BEGIN|COMMIT|ROLLBACK|RESET)\b", re.I
 def die(msg, code=1):
     print("ERROR: " + msg, file=sys.stderr)
     sys.exit(code)
+
+
+# 拼进 SQL 的标识符白名单：独立出现的（表名/列名）必须字母开头；
+# 嵌在别的标识符中间的（如 bak_<后缀>_<表> 的后缀）允许数字开头
+_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_$]*$")
+_IDENT_INNER_RE = re.compile(r"^[A-Za-z0-9_$]+$")
+
+
+def check_ident(value, label, allow_leading_digit=False):
+    """校验要拼进 SQL 的标识符，非法即报错中止（防注入）。
+    allow_leading_digit=True 用于嵌在别的标识符中间的值（如备份表后缀）。
+    合法值原样返回，便于内联使用。"""
+    pat = _IDENT_INNER_RE if allow_leading_digit else _IDENT_RE
+    if not value or not pat.match(value):
+        die("%s 非法（只允许字母/数字/下划线/$%s）: %r"
+            % (label, "" if allow_leading_digit else "，且不以数字开头", value))
+    return value
 
 
 def find_project_config():
@@ -95,7 +129,10 @@ def load_config(config_path):
                 }
             }, indent=2, ensure_ascii=False)))
     with open(config_path, "r", encoding="utf-8-sig") as f:
-        return json.load(f)
+        cfg = json.load(f)
+    # 打印生效的配置来源，便于核对凭据来自哪个文件（配置可由工作目录向上查找得到）
+    print("配置文件: %s" % os.path.abspath(config_path))
+    return cfg
 
 
 def list_environments(cfg):
@@ -139,6 +176,9 @@ def connect(env_cfg, env_name, force_readonly=False):
     }
     schema = env_cfg.get("schema")
     if schema:
+        # schema 会拼进 libpq 的 options 参数，必须是纯标识符（防注入 -c 选项）
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_$]*$", str(schema)):
+            die("配置的 schema 非法（只允许字母/数字/下划线/$，且不以数字开头）: %r" % schema)
         kwargs["options"] = "-c search_path=%s" % schema
     readonly = force_readonly or bool(env_cfg.get("read_only"))
     last_err = None
@@ -173,10 +213,31 @@ def strip_comments(sql):
 
 
 def is_read_only(sql):
-    """去掉注释后判定：仅 SELECT/SHOW/EXPLAIN/... 及不含写关键字的 WITH 为只读。"""
+    """去掉注释后判定语句是否只读。
+
+    安全要点（只收紧、不放宽）：
+    - EXPLAIN 前缀先剥掉再判定被解释语句——EXPLAIN ANALYZE 会真实执行该语句，
+      故 EXPLAIN ANALYZE <写语句> 必须按写处理；
+    - 只读关键字开头但带副作用的形态（SELECT ... INTO 建表、nextval/setval、
+      pg_terminate_backend、lo_import、dblink_exec 等）一律按写处理。
+    """
     head = strip_comments(sql).strip()
+    # 剥 EXPLAIN 前缀（含嵌套），上限 4 层防构造性死循环
+    for _ in range(4):
+        m = _EXPLAIN_HEAD_RE.match(head)
+        if not m:
+            break
+        inner = _EXPLAIN_OPTS_RE.sub("", m.group(1), count=1).strip()
+        while True:
+            m2 = _EXPLAIN_KW_RE.match(inner)
+            if not m2:
+                break
+            inner = inner[m2.end():].strip()
+        if not inner:
+            return False  # 只有 EXPLAIN 而无被解释语句：非法，按写处理
+        head = inner
     if _READ_ONLY_HEAD_RE.match(head):
-        return True
+        return not _SIDE_EFFECT_RE.search(head)
     if _WITH_HEAD_RE.match(head):
         return not _WRITE_KW_RE.search(head)
     return False
