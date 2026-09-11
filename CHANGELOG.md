@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0] - 2026-09-11
+
+### 新增
+- 从提示词模板合集抽象出 6 个新技能（技能总数 7 → 13）：
+  - `frontend-error-diagnose` — 前端报错诊断：浏览器 MCP 复现取证（console / 网络 / 调用栈）→ 根因 → 可执行方案，只诊断不改代码；含取证清单 `references/browser-evidence-checklist.md`
+  - `unit-test` — 单元测试工作流（生成 / 修复失败两类），修复类默认只改代码、交用户执行验证
+  - `doc-sync` — 文档与代码同步（更新 / 修正两类），含只读一致性复核子代理模板 `references/verify-agent.md`
+  - `commit-changes` — 提交 git 改动（commit 专员）：单一职责拆分、显式 add、中文提交信息
+  - `comment-supplement` — 注释补齐与修正：仅注释层面，不确定项先交用户确认
+  - `explain-project` — 结合项目真实代码逐项讲解概念，结尾说明项目定位
+- 同步技能清单分发路径：README.md / PLUGIN_README.md 技能表、`.claude-plugin/marketplace.json`（version 与 skills 数组）与 `config.json` 启用项
+- 未收录的提示词：优化 / 修复 bug / 检查提交 — 已由既有 `code-optimize` / `fix-bug` / `commit-review` 覆盖
+
 ## [1.0.0] - 2026-09-11
 
 ### 新增
