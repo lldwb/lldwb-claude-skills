@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0] - 2026-09-12
+
+### 新增
+- 新增 `lldwb-init` 技能（技能总数 14 → 15）：仓库指引初始化（`/init` 的 lldwb 版）——指引正文一律写入 `AGENTS.md`（唯一权威源，与既有内容合并、不覆盖），`CLAUDE.md` 只保留指向声明、不承载正文
+  - 流程要点：前置检查（git 仓库根 / 既有指引 / `.gitignore` 是否忽略两份文档）→ 探索仓库并用 `git` / `grep` 核实事实 → 归纳"读多个文件才能拼出"的架构结论（每条标注出处）→ 按骨架动笔（既有 `AGENTS.md` 只降层级、文本零改动；既有 `CLAUDE.md` 的实质内容先并入再收敛为指向）→ `git status` / `git check-ignore` / `git diff` 三项核验 → 询问用户后提交
+  - 红线：命令、路径与"唯一入口 / 共享模块 / 只改一处"类断言动笔前必须有佐证；不编造章节、不写通用开发实践、不罗列文件树；探索中发现的异常（`.gitignore` 误命中、逻辑两处重复）只记入「已知坑」并汇报，不擅自修
+  - 含参考文件 `references/output-templates.md`（`AGENTS.md` 章节骨架与反例、`CLAUDE.md` 指向模板、合并既有内容的做法、动笔前核验清单）
+- 同步技能清单分发路径：README.md / PLUGIN_README.md 技能表、`.claude-plugin/marketplace.json`（version 与 skills 数组）与 `config.json` 启用项
+
 ## [1.2.0] - 2026-09-12
 
 ### 新增
