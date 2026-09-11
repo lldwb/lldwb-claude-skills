@@ -28,7 +28,7 @@
 
 ## 包含的技能
 
-`dev-skills` 插件包含 7 个技能：
+`dev-skills` 插件包含 13 个技能：
 
 | Skill | 用途 |
 |-------|------|
@@ -39,6 +39,12 @@
 | db-query | 数据库查询（生产只读） |
 | module-batch | 多模块并行改造（worktree + 子代理） |
 | controller-check | Controller 校验规则提取 |
+| frontend-error-diagnose | 前端报错诊断（浏览器 MCP 复现，只诊断不改代码） |
+| unit-test | 单元测试生成 / 失败修复 |
+| doc-sync | 文档与代码同步（更新 / 修正 + 子代理复核） |
+| commit-changes | 提交 git 改动（拆分 / 显式 add / 中文信息） |
+| comment-supplement | 注释补齐与修正（仅注释层面） |
+| explain-project | 结合项目讲解概念 |
 
 技能清单定义在 `.claude-plugin/marketplace.json`。
 
