@@ -20,7 +20,7 @@ description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环�
    ```
    - 缺省取配置 `default_env`；切环境加 `--env <环境名>`。
    - 查看可用环境：`python <skill 目录>/scripts/log-diagnose.py --list-envs`
-   - 脚本读取 `log-diagnose.config.json`（skill 同级，或 `--config` 指定；gitignored 的敏感配置不要入库），输出到 `.tasks/log-diagnosis/<env>/<trace_id>.summary.txt` 与 `.raw.json`。
+   - 脚本按**配置加载顺序**取配置：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/log-diagnose.config.json`（从当前工作目录向上查找，实现不同项目不同 Kibana 环境切换）；③ skill 同级默认 `log-diagnose.config.json`。配置均 gitignored，敏感凭据不入库，按 `references/config.example.json` 模板创建。输出到 `.tasks/log-diagnosis/<env>/<trace_id>.summary.txt` 与 `.raw.json`。
    - 若提示"无日志命中"：确认时间窗已覆盖日志保留期（如 30 天）重试一次；仍无则向用户报告该 trace 未落当前环境（`<env>`）日志，停止。
    - 若提示配置缺失：向用户报告需创建配置（schema 见脚本报错或 `references/config.example.json`），停止。
 3. 读取 `summary.txt`：先看头部 `total_matched` 与截断告警；浏览"时序摘要"；重点读"全量 ERROR 消息"段。必要时读 `.raw.json` 取完整 message。

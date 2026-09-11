@@ -15,7 +15,11 @@
 
 - `SKILL.md` — 技能指令（唯一入口）
 - `scripts/db-query.py` — 查询脚本（参数 `--env` / `--sql` / `--sql-file` / `--limit` / `--connect` / `--allow-write` / `--config` / `--out-dir`）
-- `references/config.example.json` — 配置模板（复制为同级 `db-query.config.json` 并填凭据，不入库）
+- `references/config.example.json` — 配置模板（复制为 `db-query.config.json` 并填凭据，不入库）
+
+## 配置（不同项目不同环境）
+
+按加载顺序取用：① `--config <路径>`；② 项目级 `<项目根>/.claude/db-query.config.json`（脚本从当前工作目录向上查找）；③ skill 同级默认。项目级配置适合不同项目接不同数据库的场景，全局默认兜底。
 
 ## 依赖
 

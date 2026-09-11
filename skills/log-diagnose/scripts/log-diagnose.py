@@ -61,6 +61,22 @@ from datetime import datetime, timezone
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, "..", "log-diagnose.config.json")
 DEFAULT_OUT_DIR = os.path.join(SCRIPT_DIR, "..", ".tasks", "log-diagnosis")
+CONFIG_FILENAME = "log-diagnose.config.json"
+
+
+def find_project_config():
+    """从当前工作目录向上逐级查找项目级配置 <项目根>/.claude/<CONFIG_FILENAME>，命中返回路径，否则 None。
+    项目级配置优先于 skill 全局默认，实现不同项目不同 Kibana 环境的切换。"""
+    d = os.getcwd()
+    while True:
+        cand = os.path.join(d, ".claude", CONFIG_FILENAME)
+        if os.path.exists(cand):
+            return cand
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+    return None
 
 
 def out_dir(base, env):
@@ -300,7 +316,8 @@ def main():
                     help="Nh/Nd/Nw/Nm / now-15h / ISO(2026-08-31T10:50:00) / from~to；缺省走配置 default_days")
     ap.add_argument("--env", default=None, help="环境名(如 prod/test)，缺省走配置 default_env")
     ap.add_argument("--list-envs", action="store_true", help="列出可用环境后退出")
-    ap.add_argument("--config", default=DEFAULT_CONFIG, help="配置文件路径（默认 skill 同级 log-diagnose.config.json）")
+    ap.add_argument("--config", default=None,
+                    help="配置文件路径；缺省按优先级查找: 项目级 .claude/%s（当前目录向上）→ skill 同级默认" % CONFIG_FILENAME)
     ap.add_argument("--out-dir", default=DEFAULT_OUT_DIR, help="输出根目录（默认 skill 同级 .tasks/log-diagnosis）")
     ap.add_argument("--kw", action="append", default=[], dest="kws",
                     help="关键词，可多次指定，全部按 AND 命中的快照；仅 trace_id 时兼容原语义")
@@ -308,7 +325,7 @@ def main():
                     help="显式指定时间窗（推荐），避免与 trace_id 位置歧义")
     args = ap.parse_args()
 
-    cfg = load_config(args.config)
+    cfg = load_config(args.config or find_project_config() or DEFAULT_CONFIG)
     if args.list_envs:
         list_environments(cfg)
         return

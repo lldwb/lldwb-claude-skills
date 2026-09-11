@@ -18,6 +18,8 @@ description: 数据库查询技能（psycopg2，PostgreSQL 协议，可连 Gauss
 
 ## 安全铁律
 
+配置按**加载顺序**取用：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/db-query.config.json`（从当前工作目录向上查找，实现不同项目不同数据库环境切换）；③ skill 同级默认 `db-query.config.json`。均 gitignored，凭据不入库，按 `references/config.example.json` 模板创建。
+
 1. **生产（prod）只读**: 只允许 SELECT/SHOW/EXPLAIN 及不含写关键字的 WITH。任何 DML/DDL 一律拒绝，
    即使带 `--allow-write` 也被脚本拦截。生产只做查询核对，不改数据。
 2. **测试（test）可读写，但写前必确认**: 写语句（INSERT/UPDATE/DELETE/DDL 等）默认被拦截，

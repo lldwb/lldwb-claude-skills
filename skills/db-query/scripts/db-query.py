@@ -57,6 +57,22 @@ _ensure_utf8()
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, "..", "db-query.config.json")
 DEFAULT_OUT_DIR = os.path.join(SCRIPT_DIR, "..", ".tasks", "db-query")
+CONFIG_FILENAME = "db-query.config.json"
+
+
+def find_project_config():
+    """从当前工作目录向上逐级查找项目级配置 <项目根>/.claude/<CONFIG_FILENAME>，命中返回路径，否则 None。
+    项目级配置优先于 skill 全局默认，实现不同项目不同数据库环境的切换。"""
+    d = os.getcwd()
+    while True:
+        cand = os.path.join(d, ".claude", CONFIG_FILENAME)
+        if os.path.exists(cand):
+            return cand
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+    return None
 
 
 def die(msg, code=1):
@@ -255,11 +271,12 @@ def main():
     ap.add_argument("--allow-write", action="store_true",
                     help="测试环境显式允许写语句（须先获得用户确认；生产环境忽略并拒绝）")
     ap.add_argument("--json", action="store_true", help="额外以 JSON 打印结果到 stdout")
-    ap.add_argument("--config", default=DEFAULT_CONFIG, help="配置文件路径（默认 skill 同级 db-query.config.json）")
+    ap.add_argument("--config", default=None,
+                    help="配置文件路径；缺省按优先级查找: 项目级 .claude/%s（当前目录向上）→ skill 同级默认" % CONFIG_FILENAME)
     ap.add_argument("--out-dir", default=DEFAULT_OUT_DIR, help="输出根目录（默认 skill 同级 .tasks/db-query）")
     args = ap.parse_args()
 
-    cfg = load_config(args.config)
+    cfg = load_config(args.config or find_project_config() or DEFAULT_CONFIG)
     if args.list_envs:
         list_environments(cfg)
         return

@@ -18,7 +18,11 @@
 
 - `SKILL.md` — 技能指令（唯一入口）
 - `scripts/log-diagnose.py` — Kibana 取数脚本（参数 `--config` / `--out-dir`）
-- `references/config.example.json` — 配置模板（复制为同级 `log-diagnose.config.json` 并填凭据，不入库）
+- `references/config.example.json` — 配置模板（复制为 `log-diagnose.config.json` 并填凭据，不入库）
+
+## 配置（不同项目不同环境）
+
+按加载顺序取用：① `--config <路径>`；② 项目级 `<项目根>/.claude/log-diagnose.config.json`（脚本从当前工作目录向上查找）；③ skill 同级默认。项目级配置适合不同项目接不同 Kibana 的场景，全局默认兜底。
 
 ## 依赖
 
