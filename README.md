@@ -1,6 +1,6 @@
 # lldwb-claude-skills
 
-从业务项目实践中抽象出的 14 个通用工作流技能（Agent Skills），供其他项目复用。
+从业务项目实践中抽象出的 15 个通用工作流技能（Agent Skills），供其他项目复用。
 每个技能是一个自包含目录，含 `SKILL.md`（frontmatter: `name` + `description`）及所需的脚本/参考文件/README。
 
 ## 技能列表
@@ -21,6 +21,7 @@
 | commit-changes | 提交 git 改动（commit 专员）：单一职责拆分、显式 add、中文提交信息，不自动 push | — |
 | comment-supplement | 注释补齐与修正：补全缺失 + 修正失效描述，仅注释层面，不确定项交用户确认 | — |
 | explain-project | 项目讲解：结合项目真实代码逐项讲清概念，结尾说明项目定位 | — |
+| lldwb-init | 仓库指引初始化（`/init` 的 lldwb 版）：正文写入 AGENTS.md（唯一权威源、与既有内容合并），CLAUDE.md 仅作指向；先核实再断言，异常只记录上交 | references/output-templates.md |
 
 ## 目录结构
 
