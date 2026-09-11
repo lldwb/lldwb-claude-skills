@@ -50,6 +50,23 @@ def die(msg, code=1):
     sys.exit(code)
 
 
+def safe_skill_dir(base_dir, name):
+    """把技能名解析为 base_dir 下的直接子目录路径。
+    技能名来自命令行，必须校验：os.path.join 遇绝对路径会直接丢弃 base_dir，
+    不校验时后续 rmtree / copytree 可能落到技能目录之外的任意路径。"""
+    if not name or name in (".", ".."):
+        die("非法技能名: %r" % name)
+    if "\\" in name or "/" in name:
+        die("非法技能名（不得包含路径分隔符）: %r" % name)
+    if os.path.isabs(name) or os.path.splitdrive(name)[0]:
+        die("非法技能名（不得为绝对路径或含盘符）: %r" % name)
+    base = os.path.abspath(base_dir)
+    target = os.path.abspath(os.path.join(base, name))
+    if os.path.dirname(target) != base:
+        die("技能名越出技能目录: %r" % name)
+    return target
+
+
 def load_skills():
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
@@ -81,9 +98,15 @@ def main():
     if args.names:
         todo = [(n, skills.get(n, {})) for n in args.names]
         for n, _ in todo:
-            if not os.path.isdir(os.path.join(SKILLS_DIR, n)):
+            if not os.path.isdir(safe_skill_dir(SKILLS_DIR, n)):
                 die("技能 '%s' 不存在于 %s" % (n, SKILLS_DIR))
     else:
+        # 无参安装必须以 config.json 的启用清单为准：缺配置时报错，
+        # 不兜底安装全部技能（避免 clone 后未建配置导致全量安装）
+        if not os.path.exists(CONFIG_PATH):
+            die("未找到 %s，无法确定启用清单。\n"
+                "请按 README 的目录结构创建 config.json，"
+                "或显式指定技能名: python install.py <技能名> [<技能名> ...]" % CONFIG_PATH)
         todo = [(n, s) for n, s in sorted(skills.items()) if s.get("enabled", True)]
 
     if not todo:
@@ -92,13 +115,15 @@ def main():
         os.makedirs(TARGET_DIR, exist_ok=True)
 
     for name, _ in todo:
-        src = os.path.join(SKILLS_DIR, name)
-        dst = os.path.join(TARGET_DIR, name)
+        src = safe_skill_dir(SKILLS_DIR, name)
+        dst = safe_skill_dir(TARGET_DIR, name)
         print("%s -> %s" % (src, dst))
         if not args.dry_run:
             if os.path.exists(dst):
                 shutil.rmtree(dst)
-            shutil.copytree(src, dst)
+            # 跳过本地产物，避免把 .tasks 里的查询结果/任务产物带到安装目录
+            shutil.copytree(src, dst, ignore=shutil.ignore_patterns(
+                ".tasks", "__pycache__", "*.pyc", "*.pyo"))
 
     if args.dry_run:
         print("(--dry-run: 未实际安装)")
