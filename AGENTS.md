@@ -80,7 +80,18 @@ python skills/controller-check/scripts/build_check_xlsx.py --tasks <片段目录
 
 ### 提交信息
 
-- 格式：`<type>: <中文简洁描述>`，type 取 feat / fix / chore / refactor 等常规类别
+遵循 [Conventional Commits（约定式提交）](https://www.conventionalcommits.org/) 规范：
+
+```text
+<type>(<scope>): <一句话中文标题>
+
+<正文（可选，推荐）>
+
+<footer（按需）>
+```
+
+- type 取 feat / fix / chore / refactor / docs / test / perf 等常规类别；scope 为改动涉及的模块或技能名，无明确归属时可省略
+- 正文用中文分点说明改了什么、为什么；`fix` 类推荐按「问题现象 → 原因分析 → 修改方案 → 涉及文件」组织
 - 不带任何 Co-Authored-By 类署名
 - 参考文本只是方向，具体文案由提交者自行生成，不照抄参考文本中的项目名或目录名
 - 描述聚焦改动本身（做了什么/为什么），不掺杂具体项目背景
