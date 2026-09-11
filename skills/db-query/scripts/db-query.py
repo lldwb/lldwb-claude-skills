@@ -17,10 +17,12 @@ config 结构: { "default_env": "test",
     python db-query.py --connect [--env prod]     # 仅测试连通性
     python db-query.py --list-envs
 
-输出（写到 --out-dir/<env>/）:
+输出（写到 <输出根>/<env>/）:
     <yyyyMMdd-HHmmss>-<摘要>.txt   表格文本（含列头与行列数）
     <yyyyMMdd-HHmmss>-<摘要>.json  行数据（对象数组）
-stdout: 连接信息 / 行列数 / 耗时 / 输出路径
+    输出根按配置来源决定: 显式 --config → ~/Downloads；项目级配置 → <项目根>/.tasks/；
+    全局默认 → ~/.claude/.tasks/；均可用 --out-dir 覆盖
+stdout: 配置文件来源 / 连接信息 / 行列数 / 耗时 / 输出路径
 """
 import sys
 import os
@@ -56,7 +58,7 @@ _ensure_utf8()
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, "..", "db-query.config.json")
-DEFAULT_OUT_DIR = os.path.join(SCRIPT_DIR, "..", ".tasks", "db-query")
+GLOBAL_OUT_DIR = os.path.join(os.path.expanduser("~"), ".claude", ".tasks", "db-query")
 CONFIG_FILENAME = "db-query.config.json"
 
 
@@ -73,6 +75,19 @@ def find_project_config():
             return None
         d = parent
     return None
+
+
+def resolve_out_root(cfg_path, cfg_src, out_dir_arg):
+    """按配置来源决定输出根：--out-dir 显式 > 显式配置(下载目录) > 项目级(项目路径) > 全局(~/.claude)。
+    与 log-diagnose 保持一致，避免生产查询结果落在 skill 目录内造成扩散。"""
+    if out_dir_arg:
+        return os.path.abspath(out_dir_arg)
+    if cfg_src == "explicit":
+        return os.path.join(os.path.expanduser("~"), "Downloads")
+    if cfg_src == "project":
+        proj_root = os.path.dirname(os.path.dirname(os.path.abspath(cfg_path)))
+        return os.path.join(proj_root, ".tasks", "db-query")
+    return GLOBAL_OUT_DIR
 
 
 def die(msg, code=1):
@@ -103,7 +118,10 @@ def load_config(config_path):
                 }
             }, indent=2, ensure_ascii=False)))
     with open(config_path, "r", encoding="utf-8-sig") as f:
-        return json.load(f)
+        cfg = json.load(f)
+    # 打印生效的配置来源，便于核对凭据来自哪个文件（配置可由工作目录向上查找得到）
+    print("配置文件: %s" % os.path.abspath(config_path))
+    return cfg
 
 
 def list_environments(cfg):
@@ -129,14 +147,33 @@ def resolve_env(cfg, env_name):
 
 # ---- SQL 安全判定 ----
 
-# 只读语句白名单。WITH 开头的 CTE 单独判断是否内嵌写操作。
+# 只读语句白名单。EXPLAIN 前缀与 WITH 开头的 CTE 单独判定。
+# 注意: 本文件与 db_common.py 各有一份同名判定（db-query.py 自包含），
+# 修改安全判定时两处必须同步，且只能收紧、不得放宽。
 _READ_ONLY_HEAD_RE = re.compile(
-    r"^\s*(?:SELECT|SHOW|EXPLAIN|DESCRIBE|VALUES|TABLE)\b", re.IGNORECASE)
+    r"^\s*(?:SELECT|SHOW|DESCRIBE|VALUES|TABLE)\b", re.IGNORECASE)
 _WITH_HEAD_RE = re.compile(r"^\s*WITH\b", re.IGNORECASE)
 # 写操作关键字（用于判定 WITH 内嵌写 / 报错文案加固）
 _WRITE_KW_RE = re.compile(
     r"\b(?:INSERT|UPDATE|DELETE|MERGE|UPSERT|CREATE|ALTER|DROP|TRUNCATE|"
     r"GRANT|REVOKE|COMMENT|CALL|VACUUM|REINDEX|REFRESH|RENAME|COPY|MOVE)\b",
+    re.IGNORECASE)
+# EXPLAIN 前缀：(ANALYZE, BUFFERS) 选项与 ANALYZE|VERBOSE 关键字剥掉后，
+# 按被解释的语句本身判定——EXPLAIN ANALYZE 会真实执行该语句。
+_EXPLAIN_HEAD_RE = re.compile(r"^\s*EXPLAIN\b(.*)$", re.IGNORECASE | re.S)
+_EXPLAIN_OPTS_RE = re.compile(r"^\s*\((?:[^()]|\([^()]*\))*\)\s*")
+_EXPLAIN_KW_RE = re.compile(r"^(?:ANALYZE|ANALYSE|VERBOSE)\b\s*", re.IGNORECASE)
+# 只读关键字开头、但带写或敏感副作用的形态，一律按写处理：
+#   SELECT ... INTO <table>（建表）、nextval/setval（推进序列）、
+#   pg_terminate_backend 等后端管理函数、lo_import/lo_unlink/lo_put（大对象）、
+#   dblink_exec（远端执行）、pg_read_file 等（读服务器文件）、
+#   FOR UPDATE / FOR SHARE 系列（行锁）
+_SIDE_EFFECT_RE = re.compile(
+    r"\bINTO\b|\b(?:nextval|setval)\s*\(|pg_terminate_backend|pg_cancel_backend|"
+    r"pg_reload_conf|pg_rotate_logfile|pg_switch_wal|pg_create_restore_point|"
+    r"pg_stat_reset|lo_import|lo_unlink|lo_put|dblink_exec|"
+    r"pg_read_file|pg_read_binary_file|pg_ls_dir|"
+    r"\bFOR\s+(?:NO\s+KEY\s+|KEY\s+)?(?:UPDATE|SHARE)\b",
     re.IGNORECASE)
 
 
@@ -148,10 +185,31 @@ def strip_comments(sql):
 
 
 def is_read_only(sql):
-    """去掉注释后判定：仅 SELECT/SHOW/EXPLAIN/... 及不含写关键字的 WITH 为只读。"""
+    """去掉注释后判定语句是否只读。
+
+    安全要点（只收紧、不放宽）：
+    - EXPLAIN 前缀先剥掉再判定被解释语句——EXPLAIN ANALYZE 会真实执行该语句，
+      故 EXPLAIN ANALYZE <写语句> 必须按写处理；
+    - 只读关键字开头但带副作用的形态（SELECT ... INTO 建表、nextval/setval、
+      pg_terminate_backend、lo_import、dblink_exec 等）一律按写处理。
+    """
     head = strip_comments(sql).strip()
+    # 剥 EXPLAIN 前缀（含嵌套），上限 4 层防构造性死循环
+    for _ in range(4):
+        m = _EXPLAIN_HEAD_RE.match(head)
+        if not m:
+            break
+        inner = _EXPLAIN_OPTS_RE.sub("", m.group(1), count=1).strip()
+        while True:
+            m2 = _EXPLAIN_KW_RE.match(inner)
+            if not m2:
+                break
+            inner = inner[m2.end():].strip()
+        if not inner:
+            return False  # 只有 EXPLAIN 而无被解释语句：非法，按写处理
+        head = inner
     if _READ_ONLY_HEAD_RE.match(head):
-        return True
+        return not _SIDE_EFFECT_RE.search(head)
     if _WITH_HEAD_RE.match(head):
         return not _WRITE_KW_RE.search(head)
     return False
@@ -198,6 +256,9 @@ def connect(env_cfg, env_name):
     }
     schema = env_cfg.get("schema")
     if schema:
+        # schema 会拼进 libpq 的 options 参数，必须是纯标识符（防注入 -c 选项）
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_$]*$", str(schema)):
+            die("配置的 schema 非法（只允许字母/数字/下划线/$，且不以数字开头）: %r" % schema)
         kwargs["options"] = "-c search_path=%s" % schema
     last_err = None
     for host in hosts:
@@ -273,10 +334,14 @@ def main():
     ap.add_argument("--json", action="store_true", help="额外以 JSON 打印结果到 stdout")
     ap.add_argument("--config", default=None,
                     help="配置文件路径；缺省按优先级查找: 项目级 .claude/%s（当前目录向上）→ skill 同级默认" % CONFIG_FILENAME)
-    ap.add_argument("--out-dir", default=DEFAULT_OUT_DIR, help="输出根目录（默认 skill 同级 .tasks/db-query）")
+    ap.add_argument("--out-dir", default=None,
+                    help="输出根目录；缺省按配置来源: 显式 --config→下载目录, 项目级配置→项目路径, 全局默认→~/.claude")
     args = ap.parse_args()
 
-    cfg = load_config(args.config or find_project_config() or DEFAULT_CONFIG)
+    proj_cfg = find_project_config()
+    cfg_path = args.config or proj_cfg or DEFAULT_CONFIG
+    cfg_src = "explicit" if args.config else ("project" if proj_cfg else "default")
+    cfg = load_config(cfg_path)
     if args.list_envs:
         list_environments(cfg)
         return
@@ -326,7 +391,7 @@ def main():
     rows = rows[:limit]
 
     name = time.strftime("%Y%m%d-%H%M%S") + "-" + slugify(sql)
-    outdir = os.path.join(os.path.abspath(args.out_dir), env_name)
+    outdir = os.path.join(resolve_out_root(cfg_path, cfg_src, args.out_dir), env_name)
     txt_path, json_path = write_outputs(outdir, name, sql, cols, rows, truncated, desc)
 
     print("环境: %s  返回: %d 行 x %d 列  耗时 %.2fs%s" % (

@@ -21,7 +21,9 @@ description: 数据库查询技能（psycopg2，PostgreSQL 协议，可连 Gauss
 配置按**加载顺序**取用：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/db-query.config.json`（从当前工作目录向上查找，实现不同项目不同数据库环境切换）；③ skill 同级默认 `db-query.config.json`。均 gitignored，凭据不入库，按 `references/config.example.json` 模板创建。
 
 1. **生产（prod）只读**: 只允许 SELECT/SHOW/EXPLAIN 及不含写关键字的 WITH。任何 DML/DDL 一律拒绝，
-   即使带 `--allow-write` 也被脚本拦截。生产只做查询核对，不改数据。
+   即使带 `--allow-write` 也被脚本拦截。**带写副作用的变体同样不放行**：`EXPLAIN ANALYZE <写语句>`
+   （会真实执行该语句）、`SELECT ... INTO <表>`（会建表）、`nextval`/`setval`/`pg_terminate_backend`
+   等函数，一律按写处理，只读环境直接拒绝。生产只做查询核对，不改数据。
 2. **测试（test）可读写，但写前必确认**: 写语句（INSERT/UPDATE/DELETE/DDL 等）默认被拦截，
    须先向用户说明将执行什么写操作、影响哪些数据、是否可回滚，**获得用户明确同意后**再加
    `--allow-write` 执行。
@@ -31,8 +33,9 @@ description: 数据库查询技能（psycopg2，PostgreSQL 协议，可连 Gauss
 5. **禁 select \***: 明确列出所需列。
 6. **密码安全**: 账号密码只存于 db-query.config.json（gitignored），不得写入任何输出文件、
    命令文档或聊天记录明文之外。
-7. **结果落盘**: 每次查询自动输出到 `.tasks/db-query/<env>/<时间戳>-<摘要>.txt/.json`，
-   重要查询结果可引用该路径给用户。
+7. **结果落盘**: 每次查询自动输出到 `<输出根>/<env>/<时间戳>-<摘要>.txt/.json`。输出根按配置来源：
+   显式 `--config` → `~/Downloads/`；项目级配置 → `<项目根>/.tasks/db-query/`；全局默认 →
+   `~/.claude/.tasks/db-query/`；均可用 `--out-dir` 覆盖。重要查询结果可引用该路径给用户。
 
 ## 用法
 
@@ -83,5 +86,6 @@ python <skill 目录>/scripts/sync-table.py --table <表名> --from prod --to te
 ## 注意事项
 
 - 判定（是否 BUG、是否需修数据）由 agent 推理完成，脚本只取数，不给结论。
-- 生产环境查询结果同样会落盘到 `.tasks/db-query/prod/`，注意引用时不要包含敏感行数据之外的账号口令。
+- 生产环境查询结果同样会落盘（路径见安全铁律第 7 条），注意引用时不要包含敏感行数据之外的账号口令。
+- 脚本启动时会打印**生效的配置文件路径**——连接非预期环境前先核对该路径，确认凭据来源。
 - 若配置缺失或环境连不通，向用户报告具体错误并停止，不静默降级。

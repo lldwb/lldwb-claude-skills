@@ -14,7 +14,7 @@
         --where "<条件>" [--allow-write]
 
 安全:
-    - --where 必填且禁止分号，杜绝无条件全表同步/拼接
+    - --table 必须是合法标识符；--where 必填且禁止分号，杜绝无条件全表同步/拼接
     - 源连接强制会话只读，即使源环境配置为可写也不允许写源
     - 目标为只读环境（如 prod）一律拒绝；测试环境默认拦截，须 --allow-write
       （agent 须先向用户说明将清理/插入哪些行，获确认后再执行）
@@ -24,7 +24,7 @@ import argparse
 
 import db_common
 from db_common import (die, load_config, find_project_config, resolve_env,
-                       connect, check_write_allowed)
+                       connect, check_write_allowed, check_ident)
 
 
 def get_columns(conn, schema, table):
@@ -52,6 +52,8 @@ def main():
 
     if ";" in args.where:
         die("--where 中不允许出现分号")
+    # 表名会直接拼进源/目标两侧的 SQL，必须是合法标识符（--where 的分号拦截挡不住表名）
+    check_ident(args.table, "--table")
     if args.from_env == args.to_env:
         die("源环境与目标环境不能相同: %s" % args.from_env)
 
