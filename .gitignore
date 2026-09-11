@@ -1,0 +1,12 @@
+# 敏感配置（Kibana 凭据等），按 references/config.example.json 模板在本地创建
+**/log-diagnose.config.json
+**/config.json
+
+# 工作产物
+.tasks/
+__pycache__/
+*.pyc
+
+# 本地下载/临时文件
+Downloads/
+*.tmp

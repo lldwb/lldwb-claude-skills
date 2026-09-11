@@ -1,0 +1,29 @@
+{
+  "default_env": "prod",
+  "environments": {
+    "prod": {
+      "name": "生产环境",
+      "kibana": {
+        "host": "http://<ip>:5601",
+        "username": "elastic",
+        "password": "<password>"
+      },
+      "index_pattern": "filebeat-<app>-prod-*",
+      "default_days": 30,
+      "max_hits": 2000,
+      "page_size": 300
+    },
+    "test": {
+      "name": "测试环境",
+      "kibana": {
+        "host": "http://<ip>:5601",
+        "username": "elastic",
+        "password": "<password>"
+      },
+      "index_pattern": "filebeat-<app>-test-*",
+      "default_days": 30,
+      "max_hits": 2000,
+      "page_size": 300
+    }
+  }
+}
