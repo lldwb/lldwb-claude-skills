@@ -28,11 +28,12 @@
 
 ## 包含的技能
 
-`dev-skills` 插件包含 13 个技能：
+`dev-skills` 插件包含 14 个技能：
 
 | Skill | 用途 |
 |-------|------|
 | fix-bug | Bug 修复标准工作流 |
+| feature-dev | 需求开发全流程（需求分析 → 方案 → 实现 → 实测 → 提交） |
 | code-optimize | 代码优化标准工作流 |
 | commit-review | 提交评审（只检查不改代码） |
 | log-diagnose | 日志自动诊断（Kibana，BUG 出双 MD） |

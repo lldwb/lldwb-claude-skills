@@ -1,6 +1,6 @@
 # lldwb-claude-skills
 
-从业务项目实践中抽象出的 13 个通用工作流技能（Agent Skills），供其他项目复用。
+从业务项目实践中抽象出的 14 个通用工作流技能（Agent Skills），供其他项目复用。
 每个技能是一个自包含目录，含 `SKILL.md`（frontmatter: `name` + `description`）及所需的脚本/参考文件/README。
 
 ## 技能列表
@@ -8,6 +8,7 @@
 | Skill | 用途 | 附属文件 |
 |-------|------|---------|
 | fix-bug | Bug 修复标准工作流：先理解再动手、四段式定位、编译/测试验证、按仓库规范提交 | — |
+| feature-dev | 需求开发全流程：需求分析 → 方案设计（含可行性核证）→ 规划文档 → 分层实现 → 端到端实测 → 提交 | references/feasibility-check.md、references/e2e-verify.md |
 | code-optimize | 代码优化工作流：SSOT、保持对外行为不变、commit 专员式提交 | — |
 | commit-review | 提交评审：取数落盘 → 探索调用链 → 分层/契约/@Deprecated 检查，只检查不改代码 | scripts/check-commit.py |
 | log-diagnose | 日志自动诊断：按 trace_id + 时间窗从 Kibana 拉日志、六类故障分类法、BUG 时产出双 MD（修复任务 + 事故报告） | scripts/log-diagnose.py、references/config.example.json |
