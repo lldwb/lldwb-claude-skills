@@ -1,6 +1,6 @@
 ---
 name: log-diagnose
-description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环境，--env 切换）拉取日志，定位错误根因；判定为 BUG（含查询超时引发报错）时产出修复任务 MD 与独立事故报告 MD 两份文档。当用户给出 trace_id / 日志片段要求排查线上问题、定位错误根因、判断是否 bug 时使用，即使未明确说"用 skill"。
+description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环境，--env 切换）拉取日志，定位错误根因；需要核对业务数据状态时用项目数据库查询能力查库佐证；判定为 BUG（含查询超时引发报错）时产出修复任务 MD 与独立事故报告 MD 两份文档。当用户给出 trace_id / 日志片段要求排查线上问题、定位错误根因、判断是否 bug 时使用，即使未明确说"用 skill"。
 ---
 
 # 日志自动诊断
@@ -26,7 +26,8 @@ description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环�
 3. 读取 `summary.txt`：先看头部 `total_matched` 与截断告警；浏览"时序摘要"；重点读"全量 ERROR 消息"段。必要时读 `.raw.json` 取完整 message。
 4. 分类判定：按下述【分类法】逐条审视 ERROR/WARN，找到"导致请求最终失败"的那条；沿 `caused by`/包裹链上溯到最深业务根因。
 5. 用仓库检索（`grep`/`glob`/`read`）把根因 stack 帧映射到 `file:line`，确认异常确由应用代码抛出。**映射后必须核对涉及代码当时的提交**：先 `git log --before=<故障时间> <线上分支> -- <文件>` / `git blame` **定位**线上对应分支在故障时间点的 commit（记录 hash/日期/分支）；再 `python <skill 目录>/scripts/check-commit.py <sha>`（或 `commit-review` skill 的取数脚本）**检视**该提交——脚本输出含该提交相对父提交的完整 diff（raw.diff），足以核对"缺陷是否由此提交引入"、故障版本代码的改动点；必要时 `git diff <sha> -- <文件>` 对照当前工作区差异。若工作区代码与线上不一致（行号/逻辑漂移），以线上 commit 对应版本为准并在报告中注明，防止用错误版本代码分析出错误根因。
-6. 输出：
+6. 数据佐证（可选）：根因涉及具体数据（单据状态、del_flag、审批流等）时，用项目的数据库查询能力（若项目提供 db 查询技能/脚本）查库核对数据状态佐证判定。**生产只读**，只查不改；测试环境写操作须先获用户确认。
+7. 输出：
    - **BUG** → 按下方【产出】小节写两份 MD：修复任务 MD（`<yyyyMMdd-HHmmss>-<trace_id>.md`，含根因代码 commit 核对）+ 独立事故报告 MD（`<yyyyMMdd-HHmmss>-<trace_id>-事故报告.md`），在 chat 告知两份路径与一句话结论，**不要自动派发**（用户自行开 agent 执行，可用 `fix-bug` skill）。
    - 其余类别 → 仅在 chat 给诊断报告（症状/根因/证据/处置建议），不写 MD。
 
@@ -44,9 +45,9 @@ description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环�
   - 带业务栈的 HTTP 500
   - **查询超时 → BUG**：`QueryTimeoutException`、`canceling statement due to user request`（DB 侧取消）、语句执行超时。查询超时说明 SQL 已引发报错并阻断请求，属性能缺陷，判为 BUG 出 MD
 - **业务阻断 → 仅报告**：业务校验异常（如 `BizValidationException`）、`ServiceException`、"业务校验失败"、业务错误码。属设计内主动抛，不是 bug。
-- **权限阻断 → 仅报告**：认证/授权异常、"无权限"/"权限不足"、401/403、Token 过滤器拦截。
+- **权限阻断 → 仅报告**：认证/授权异常（如 `UnauthorizedException`/`AuthorizationException`/`AuthenticationException`）、"无权限"/"权限不足"、401/403、Token 过滤器拦截。
 - **工作流阻断 → 仅报告，但必须上溯根因**：工作流异常、"流程回调处理失败"。**关键**：unwrap 被包裹的 cause——若 cause 是 BUG 类异常（NPE 等）或查询超时类异常（`QueryTimeoutException`/`canceling statement due to user request`）→ **升格为 BUG 出 MD**；若 cause 是业务校验异常 → 归"业务阻断"。
-- **基础设施/性能 → 标记**：连接池耗尽、`OutOfMemoryError`、缓存连接异常、慢请求（`totalTime` 大但无 ERROR）。仅报告并提示运维方向；**无报错的慢 SQL（未触发超时）也归此类**——耗时高但请求成功、不阻断用户，不算 bug，仅提示优化。
+- **基础设施/性能 → 标记**：连接池耗尽（如 `CannotGetJdbcConnectionException`）、`OutOfMemoryError`、缓存连接异常、慢请求（`totalTime` 大但无 ERROR）。仅报告并提示运维方向；**无报错的慢 SQL（未触发超时）也归此类**——耗时高但请求成功、不阻断用户，不算 bug，仅提示优化。
 - **第三方系统失败 → 仅报告**：根因为调用外部系统（第三方服务、网关等）返回失败（如 `status=false`、非 2xx、超时、返回错误码等），通常是上游依赖故障而非本应用缺陷。报告根因必须给出**三要素**：调用**地址（URL）**、**请求体**、**响应体**（含返回错误码/错误消息），并结合请求体核查本方传参是否有误、提示对接第三方排查方向。若请求体显示是应用传参错误导致第三方拒绝，再按真实性质人工复核。
 
 边界铁律：判定时取**最深业务根因**，不被中间框架/包装层误导；业务校验异常即便阻断用户也是设计内行为，**不出 MD**。多个 ERROR 取最终导致请求失败者（通常是最后一个 ERROR 或访问日志记录的失败）。**分界以"是否引发报错"为准**：查询超时已抛错阻断请求，一律判为 BUG 出 MD；未触发超时、无报错的慢 SQL 不算 bug，归"基础设施/性能"仅提示优化。

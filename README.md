@@ -26,12 +26,21 @@ skills/
 
 ## 安装到 Claude Code
 
+方式一：复制到用户级 skills 目录（每个技能一个子目录）
+
 ```bash
-# 复制到用户级 skills 目录（每个技能一个子目录）
 cp -r skills/* ~/.claude/skills/
 ```
 
-或作为 Plugin marketplace 安装（见 `.claude-plugin/marketplace.json`）。
+方式二：注册为 Plugin marketplace，安装 dev-skills 插件（支持后续拉取更新）
+
+```bash
+# 在 Claude Code 中执行（<仓库地址> 为本地路径或 git 远程地址）
+/plugin marketplace add <仓库地址>
+/plugin install dev-skills@claude-skills
+```
+
+插件安装后即可按技能名直接使用（如 "修复这个 bug" / "评审提交 abc1234" / "按 trace_id 排查日志"）。
 
 ## 使用注意
 

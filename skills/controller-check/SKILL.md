@@ -36,7 +36,7 @@ description: 业务操作前置校验规则提取 — 以 Controller 接口为�
 - **模块识别**：扫描根下按目录名识别模块
 - **落盘任务目录**：`<任务目录>`（默认 `<项目根>/.tasks/check-controller/`，已被 .gitignore 忽略，不入库；其他项目可改为 `.tasks/check-controller/` 等）
 - **最终文档标题**：`<文档标题>`（默认「系统各业务点操作前检查」，输出文件名 `<文档标题>-<范围后缀>.md`）
-- **子代理提示词**：见 `references/extract-agent.md`（调度时整体作为子代理 prompt；也可将内容固化到项目的 agents/ 目录供 `@` 调用）
+- **子代理提示词**：见 `references/extract-agent.md`（调度时将其整体作为子代理 prompt，并显式传入当前 Controller 类名与模块定位）
 
 ## 一、用法
 
@@ -147,7 +147,8 @@ LOOP END
 ```
 
 **调度要点：**
-- 子代理提示词 = `references/extract-agent.md` 全文 + 当前 Controller 类名与模块定位（每次显式传入，子代理独立会话不共享历史）。
+- 用 **Agent 工具**启动子代理（`subagent_type: general-purpose`，Tools 全覆盖），每个 Controller 一个子代理；**必须** `run_in_background=true` + 轮询任务输出（任务极长：逐 Controller 递归追溯 + 落盘）。
+- 子代理 prompt = `references/extract-agent.md` 全文 + 当前 Controller 类名与模块定位（每次显式传入，子代理独立会话不共享历史）。
 - **禁止越权**：调度方不直接追溯业务代码、不替子代理写片段。
 - **失败单个可重试**：某 Controller 子代理失败不影响其他；全部结束后统一汇总失败项，可针对性重跑（重试 ≤ 2 次）。
 - **并发上限**：`--parallel N` 是**硬上限**，始终最多 N 个并跑，不得超发。N=1 即等价串行。
@@ -258,7 +259,7 @@ LOOP END
 - **并发上限硬约束**：`--parallel N` 是同时运行的子代理**硬上限**（默认 5），始终不超过 N 个并跑，完成一个才补一个；并发高会放大总 token 消耗，全量/大模块时请按需调低或保持默认。
 - **只提取不修改**：只分析代码并输出文档，**不修改任何业务代码**；调度方禁止改现有文件，仅允许写最终文档到输出位置，子代理只写落盘片段。
 - **落盘目录不入库**：任务目录已被 gitignore 忽略，提交时不会误纳；不要 `git add` 该目录。
-- **子代理模板位置**：`references/extract-agent.md` 是子代理提示词模板（含递归遍历机制）；调度时将其整体作为子代理 prompt，并显式传入当前 Controller 类名与模块定位。
+- **子代理模板位置**：`references/extract-agent.md` 是子代理提示词模板（含递归遍历机制）；调度时用 Agent 工具启动子代理（`subagent_type: general-purpose`），将其整体作为 prompt，并显式传入当前 Controller 类名与模块定位。
 - **提交 git**：完成输出后如需提交，按项目提交规范执行（无明确要求则提交前先向用户确认拟提交内容）；不纳入任务目录工作产物。
 
 ## 输入
