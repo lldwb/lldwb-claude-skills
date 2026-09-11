@@ -1,7 +1,7 @@
 {
-  "name": "claude-skills",
+  "name": "lldwb-claude-skills",
   "owner": {
-    "name": "claude-skills"
+    "name": "lldwb-claude-skills"
   },
   "version": "1.0.0",
   "plugins": [

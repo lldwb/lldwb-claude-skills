@@ -37,7 +37,7 @@ cp -r skills/* ~/.claude/skills/
 ```bash
 # 在 Claude Code 中执行（<仓库地址> 为本地路径或 git 远程地址）
 /plugin marketplace add <仓库地址>
-/plugin install dev-skills@claude-skills
+/plugin install dev-skills@lldwb-claude-skills
 ```
 
 插件安装后即可按技能名直接使用（如 "修复这个 bug" / "评审提交 abc1234" / "按 trace_id 排查日志"）。
