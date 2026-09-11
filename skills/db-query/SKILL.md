@@ -50,6 +50,29 @@ python <skill 目录>/scripts/db-query.py --sql "UPDATE sys_user SET name='x' WH
 脚本参数: `--env`（缺省走配置 default_env）、`--sql`/`--sql-file`、`--limit`、
 `--connect`、`--list-envs`、`--allow-write`、`--json`、`--config`、`--out-dir`。
 
+## 配套脚本
+
+`scripts/` 下的取数下游工具（共用 `db_common.py` 的配置加载与安全判定）：
+
+| 脚本 | 用途 |
+| ---- | ---- |
+| `gen-fix-sql.py` | 把 db-query 结果文件（.txt/.json）转成批量 UPDATE 修复 SQL（bak + begin/update/commit），不连库 |
+| `run-sql-file.py` | 按分号切分执行 SQL 文件（修复脚本试跑），逐条报告、统计命中行数，失败回滚整个文件 |
+| `sync-table.py` | 跨环境表数据同步（如生产→测试）：源强制只读导出、目标结构校验后清理+批量插入，事务保证 |
+
+```bash
+# 生成修复脚本（结果文件取自 .tasks/db-query/<env>/）
+python <skill 目录>/scripts/gen-fix-sql.py --result .tasks/db-query/prod/xxx.txt \
+    --table <表名> --set-col <要更新的列> --filter "<条件>"
+# 测试环境试跑修复脚本（写须先获用户确认）
+python <skill 目录>/scripts/run-sql-file.py --sql-file fix.sql --env test --allow-write
+# 生产→测试同步表数据（写须先获用户确认）
+python <skill 目录>/scripts/sync-table.py --table <表名> --from prod --to test \
+    --where "<条件>" --allow-write
+```
+
+安全继承：生产只读（`sync-table` 目标为只读环境直接拒绝）、测试写前必确认、`--where`/`--filter` 必填且禁分号。
+
 ## 常见场景
 
 - **核对业务数据状态**: 查单据状态、del_flag、审批流节点等
