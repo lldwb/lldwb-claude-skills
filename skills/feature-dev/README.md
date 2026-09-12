@@ -11,6 +11,7 @@
 - **本技能**：从需求到落地的完整开发流程（含方案确认、规划文档、端到端实测闭环）
 - `code-optimize`：既有代码的小范围优化（重复代码抽取、性能、结构、可读性）
 - `fix-bug`：缺陷定位与修复
+- `doc-sync`：产出仅为文档（说明、配图、与代码对齐）的改动
 
 ## 流程
 
@@ -31,6 +32,8 @@
 - 分轮迭代：部署 → 实测 → 证据定位根因 → 修复 → 再测，每轮明确告知用户下一步操作
 - 提交：约定式提交、显式 `git add`、不自动 push/merge/PR；按用户要求支持压缩提交/amend/排除前端与临时文件
 - 交叉引用：日志排查用 `log-diagnose`、前端报错用 `frontend-error-diagnose`、单测用 `unit-test`、文档同步用 `doc-sync`、提交用 `commit-changes`
+- 两份参考件在流程里被显式读取：核证前读 `references/feasibility-check.md`、实测前读 `references/e2e-verify.md`（不是可选附件）
+- 提交前后自检：敏感信息扫描（凭据/内网地址/真实数据/本地路径）+ `git log -1 --format='%s'`、`%b` 复核标题与正文已分离
 
 ## 文件
 
