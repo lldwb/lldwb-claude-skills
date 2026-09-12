@@ -7,19 +7,19 @@
 
 | Skill | 用途 | 附属文件 |
 |-------|------|---------|
-| fix-bug | Bug 修复标准工作流：先理解再动手、四段式定位、编译/测试验证、按仓库规范提交 | — |
-| feature-dev | 需求开发全流程：需求分析 → 方案设计（含可行性核证）→ 规划文档 → 分层实现 → 端到端实测 → 提交 | references/feasibility-check.md、references/e2e-verify.md |
+| fix-bug | Bug 修复标准工作流：先理解再动手、四段式定位、编译/测试验证、按仓库规范提交（纯注释问题转 comment-supplement） | — |
+| feature-dev | 需求开发全流程：需求分析 → 方案设计（含可行性核证）→ 规划文档 → 分层实现 → 端到端实测 → 提交（纯文档产出转 doc-sync） | references/feasibility-check.md、references/e2e-verify.md |
 | code-optimize | 代码优化工作流：SSOT、保持对外行为不变、commit 专员式提交 | — |
-| commit-review | 提交评审：取数落盘 → 探索调用链 → 分层/契约/@Deprecated 检查，只检查不改代码 | scripts/check-commit.py |
+| commit-review | 提交评审：取数落盘 → 探索调用链 → 分层/契约/@Deprecated 检查 + 提交信息结构检查，只检查不改代码 | scripts/check-commit.py |
 | log-diagnose | 日志自动诊断：按 trace_id + 时间窗从 Kibana 拉日志、六类故障分类法、BUG 时产出双 MD（修复任务 + 事故报告） | scripts/log-diagnose.py、references/config.example.json |
 | db-query | 数据库查询：生产只读（三重保障）、测试写需用户确认，安全铁律（禁 select *、单条语句、控制数据量） | scripts/（db-query / gen-fix-sql / run-sql-file / sync-table / db_common）、references/config.example.json、requirements.txt |
 | module-batch | 多模块并行改造：worktree 隔离 + 并行子代理 + 合并回主分支，含中断处理与经验教训速查 | — |
 | controller-check | Controller 校验规则提取：协调调度子代理逐 Controller 追溯，按「模块→菜单→权限点→操作」模板合并输出文档 | scripts/build_check_xlsx.py、references/extract-agent.md、requirements.txt |
 | frontend-error-diagnose | 前端报错诊断：浏览器 MCP 复现取证（console / 网络 / 调用栈）→ 根因 → 可执行方案，只诊断不改代码 | references/browser-evidence-checklist.md |
 | unit-test | 单元测试：生成（覆盖分支与边界、可运行可通过）/ 修复失败（默认不自行执行，交用户验证） | — |
-| doc-sync | 文档与代码同步：由文档定位代码确认变更 → 更新 / 修正偏差，子代理复核一致性 | references/verify-agent.md |
-| commit-changes | 提交 git 改动（commit 专员）：单一职责拆分、显式 add、中文提交信息，不自动 push | — |
-| comment-supplement | 注释补齐与修正：补全缺失 + 修正失效描述，仅注释层面，不确定项交用户确认 | — |
+| doc-sync | 文档与代码同步：由文档定位代码确认变更 → 更新 / 修正偏差，子代理复核一致性（事实源不限于代码；代码改造转 feature-dev） | references/verify-agent.md |
+| commit-changes | 提交 git 改动（commit 专员）：单一职责拆分、显式 add、中文提交信息（标题/正文空行 + 提交后结构复核），不自动 push | — |
+| comment-supplement | 注释补齐与修正：补全缺失 + 修正失效描述，仅注释层面，不确定项交用户确认（与代码改动并存时用 fix-bug） | — |
 | explain-project | 项目讲解：结合项目真实代码逐项讲清概念，结尾说明项目定位 | — |
 | lldwb-init | 仓库指引初始化（`/init` 的 lldwb 版）：正文写入 AGENTS.md（唯一权威源、与既有内容合并），CLAUDE.md 仅作指向；先核实再断言，异常只记录上交 | references/output-templates.md |
 
