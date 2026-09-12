@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.4.0] - 2026-09-12
+
+按三份真实开发会话的复盘结论加固技能：补"提交信息结构"与"确认无应答"两类缺口，把子代理复核的口径从"仅代码"放开到通用"事实源"，并把两份参考件的读取写进执行步骤。
+
+### Fixed
+
+- **提交信息结构**（`commit-changes` / `feature-dev` / `doc-sync` / `fix-bug` / `lldwb-init` / `code-optimize`）：明确「标题与正文之间空一行」（缺空行时 git 会把正文并进标题，`%s` 显示成一行、`%b` 为空）；多行信息改用 Write 落消息文件 + `git commit -F`（内联 heredoc 承载多行文本偶发丢空行）；新增提交后 `git log -1 --format='%s'` / `%b` 复核，信息被并入标题时 `--amend -F` 修正
+- **提交前后自检**（`feature-dev` / `doc-sync` / `fix-bug` / `lldwb-init`）：补敏感信息扫描（凭据 / token / 内网地址 / 真实数据样例 / 本机绝对路径）——此前只有 `commit-changes` 有这一项
+- **技能边界互指**：`feature-dev` 补"纯文档产出转 `doc-sync`"；`doc-sync` 补"代码改造转 `feature-dev`"；`fix-bug` 与 `comment-supplement` 互指分工（改动仅限注释层面 vs 注释与逻辑/结构改动并存）
+- **确认请求无应答**：新增处置规则——可逆改动按推荐方案继续，并在汇报首段标注"该决策未获用户确认"；删除、历史改写、依赖或接口变更等不可逆/影响面大的改动停下等待（`commit-changes` / `feature-dev` / `doc-sync` / `fix-bug`）；`lldwb-init` 更严：询问无应答时不擅自提交，保留工作区改动待确认
+- **提交确认口径统一**：默认"提交后汇报（sha + 文件清单 + 提交信息）"，含删除 / 重命名 / 生成物 / 二进制文件或拆分方案不唯一时才先给方案确认；修正 `code-optimize`、`controller-check` 与之冲突的"提交前先确认"措辞；`lldwb-init` 的"提交前先问"作为显式例外保留
+- **`lldwb-init` 产出指引失真**：`references/output-templates.md` 的提交风格采集命令由 `git log --format='%s%n%b'` 改为 `git log -n 10 --pretty=medium`——前者看不出标题与正文之间的空行，抄进指引会把"正文跟在标题下一行"写成范例；并要求示例保留空行
+- **`lldwb-init` 提交边界**：本技能自身的提交只含 `AGENTS.md` / `CLAUDE.md`；初始化过程中用户追加的改动（补 `README.md`、调构建配置等）按 `commit-changes` 的规则另起提交，不与指引文档混在一个提交里
+- **`commit-changes` 拆分判定**：补「仓库尚无任何提交（首次提交）」一档（按最终工作区状态一次成型，不制造中间态）；新增「历史与对象清理默认不做」（`reflog expire` / `gc --prune=now` / `filter-repo` / 交互式 rebase 需先说明不可逆后果并取得明确同意，事后 `git fsck` 核验）
+- **`fix-bug` 静态缺陷**：补"无法复现的静态缺陷（死代码、注释与实现漂移、规范偏差）以**现状取证**替代复现——全仓引用计数、定义处与调用处对照"
+- **`feature-dev` / `fix-bug` 验证命令**：补"单模块项目去掉 `-pl <模块> -am`"
+- **`commit-review`**：提交信息检查项补"标题与正文之间应有空行"
+
+### Changed
+
+- **`doc-sync` 复核口径泛化**：`references/verify-agent.md` 入参由"文档路径 + 代码范围"扩展为"文档路径 + **事实源**"（代码 / 外部仓库 / 日志 / 配置 / 会话记录），输出改「证据位置」，并写明事实源非代码时按同一结构替换措辞、证据要求不变；`SKILL.md` 的复核小节补"按同步方式调度（范围很大时才后台 + 轮询）"
+- **`feature-dev` 参考件进入执行步骤**：核证前读 `references/feasibility-check.md`、实测前读 `references/e2e-verify.md`（原文只写"详见"，两份参考件在真实会话中被跳过）
+- **`feasibility-check.md`**：新增"框架/依赖大版本升级先核命名与包名"（starter 名、包名、异常继承关系随大版本变化，按旧版本记忆写代码只会得到"找不到符号"）；新增取材通道降级（`WebFetch` 可能被域名安全策略拦截 → 本地 `curl` / 抓取类 MCP / `git clone`）与大文档先落盘再 `grep`
+- **`e2e-verify.md`**：§四补"取证方式自检"（断言为负先看原始产物；禁止 `A | 解析器 || A` 式兜底以免重复发起请求；手工验证重复第二次即固化为脚本）；新增小节「五、自然语言 / 大模型驱动的链路：断言设计」（断言落在确定性事实、提问按"最小必然触发"构造、分清"被测行为不符预期"与"断言写死了一种合理实现"）
+- 各技能 `README.md` 与仓库 `README.md` / `PLUGIN_README.md` 技能表同步上述边界与提交口径；`.claude-plugin/marketplace.json` 版本随之更新
+
 ## [1.3.0] - 2026-09-12
 
 ### Added
