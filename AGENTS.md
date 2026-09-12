@@ -45,6 +45,7 @@ python skills/controller-check/scripts/build_check_xlsx.py --tasks <片段目录
 1. **`skills/<技能名>/SKILL.md` 是唯一入口**。frontmatter 的 `name` + `description` 决定技能何时被自动触发——`description` 必须写清「做什么 + 何时用（用户原话语境）」，正文是给 agent 的执行指令、不是用户文档。同目录 `README.md` 面向人（简介/用法/文件与依赖），二者需同步。
 2. **两条分发路径**（新增 / 改名 / 删除技能必须同步）：① 安装脚本按根目录 `config.json` 的启用清单复制；② 插件模式读 `.claude-plugin/marketplace.json` 的 `plugins[].skills` 数组。此外还要同步 `README.md`、`PLUGIN_README.md` 的技能表与 `CHANGELOG.md`。
 3. **脚本只取数，判定归 agent**。`scripts/` 下所有脚本的共同设计：机械地拉取 / 解析 / 转换 / 落盘，**不替 agent 下结论**（是否 BUG、提交是否有问题，由 agent 推理）。扩展脚本时不要越界写判定逻辑。
+4. **版本三处对齐，发版打 tag**。版本号须在以下三处一致：`CHANGELOG.md` 的 `## [x.y.z]` 标题（记录改了什么）、`.claude-plugin/marketplace.json` 的 `version`（插件分发读取）、git 注解 tag `vX.Y.Z`（把版本钉到具体提交，可用 `git tag --contains <sha>` 反查某提交属于哪个版本）。发版顺序：改前两处 → 提交 → 对该提交打 `git tag -a vX.Y.Z -m "<说明>"`，本地打完按需 `git push origin --tags`。不需要 release 资产或 CI 流程；回填历史 tag 只是补 ref，不改写历史。
 
 ### 跨技能共用约定（改脚本时别破坏）
 
