@@ -1,0 +1,24 @@
+#!/bin/sh
+# 推送前校验版本与 tag 一致性（本地三项：版本号一致 / 注解 tag 存在 / tag 在当前分支可达），
+# 不通过则拒绝推送。约定见 AGENTS.md「架构」第 4 条。
+#
+# 启用（每 clone 一次）: git config core.hooksPath .githooks
+# 临时跳过:            git push --no-verify
+#
+# 设计取舍：校验不通过时拦截（fail-closed）；但环境缺少 python 时放行（fail-open），
+# 避免因环境问题把正常推送卡死。--remote（远程校验）需网络，不放进钩子。
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -f "$root/check-version.py" ] || exit 0
+
+# 读掉 git 传入的待推送 ref 列表，避免上游写入时 broken pipe
+cat > /dev/null 2>&1 || true
+
+if command -v python >/dev/null 2>&1; then
+    exec python "$root/check-version.py"
+fi
+if command -v python3 >/dev/null 2>&1; then
+    exec python3 "$root/check-version.py"
+fi
+echo "[pre-push] 未找到 python/python3，跳过版本与 tag 校验" >&2
+exit 0

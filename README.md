@@ -38,6 +38,8 @@ lldwb-claude-skills/
 ├── config.json               # 技能启用配置（install 脚本按此安装）
 ├── install.py / install.sh / install.bat   # 安装到 ~/.claude/skills/
 ├── uninstall.py / uninstall.sh / uninstall.bat  # 卸载
+├── check-version.py          # 发版校验：版本号与 tag 一致性（配合 .githooks/pre-push）
+├── .githooks/pre-push        # 推送前自动校验（启用：git config core.hooksPath .githooks）
 ├── PLUGIN_README.md          # 插件使用说明
 ├── CHANGELOG.md
 ├── README.md
