@@ -88,5 +88,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 某模块被谁共用 | `grep -rn "import <模块>\|require(<模块>)"` 全仓库搜引用，别只看一处 |
 | "唯一入口""只改一处"类断言 | 必须有 `grep` / `git` 佐证；佐证不足就弱化表述 |
 | 文件是否会被忽略 | `git check-ignore -v <路径>` |
-| 提交信息风格 | `git log --format='%s%n%b' -n 10` |
+| 提交信息风格 | `git log -n 10 --pretty=medium`（**不要用 `%s%n%b`**——那种格式看不出标题与正文之间的空行，抄进指引会让示例失真） |
 | 既有 AI 规则要点 | 读 `.cursor/rules/`、`.cursorrules`、`.github/copilot-instructions.md`，要点并入 |
+
+写「提交规范」小节时，示例照 `--pretty=medium` 的缩进块复刻，**标题与正文之间保留空行**。只抄 `%s%n%b` 的渲染结果，会把"正文跟在标题下一行"这种不合规范的结构写成范例，诱导后来者产出正文被并进标题的提交。
