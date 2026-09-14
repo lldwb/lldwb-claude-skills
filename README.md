@@ -73,6 +73,15 @@ python install.py --dry-run
 python install.py --list
 ```
 
+覆盖同名技能与卸载前，原目录会先备份到 `~/.claude/backup/lldwb-skills/<时间戳>/`，安装状态（版本 + 时间）记在同目录的 `state.json`；`--list` 可直接看到每个技能的已安装版本：
+
+```bash
+python install.py --list-backups       # 查看已有备份
+python install.py --restore <技能名>   # 从最近一次备份恢复（目标已存在时拒绝覆盖，不静默覆盖）
+```
+
+删掉 `~/.claude/backup/lldwb-skills/` 即清空安装器在用户机的全部足迹。备份不做自动轮转，需要时手工清理较早的时间戳目录。
+
 方式二：注册为 Plugin marketplace，安装 dev-skills 插件（支持后续拉取更新）
 
 ```bash
