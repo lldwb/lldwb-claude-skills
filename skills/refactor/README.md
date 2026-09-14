@@ -6,7 +6,7 @@
 
 用户要求重构代码（分层/职责重构、实现迁移重写、结构性改造、批量同构改造）时自动触发；也可显式要求"用 refactor skill 重构"。
 
-**边界**：小范围优化（可读性、重复代码抽取、局部性能）用 `code-optimize`；新增或改变对外行为用 `feature-dev`；缺陷修复用 `bug-fix`；需要多模块并行隔离执行时，本技能定"改什么与怎么验收"，`module-batch` 提供 worktree 并行机制。
+**边界**：小范围优化（可读性、重复代码抽取、局部性能）用 `code-optimize`；新增或改变对外行为用 `feature-dev`；缺陷修复用 `bug-fix`；纯注释改动用 `comment-supplement`；需要多模块并行隔离执行时，本技能定"改什么与怎么验收"，`module-batch` 提供 worktree 并行机制。
 
 ## 能力
 
@@ -20,19 +20,15 @@
 
 ## 文件
 
-```
-refactor/
-├── SKILL.md                          # 技能指令（唯一入口）
-├── README.md
-├── scripts/
-│   └── contract-snapshot.py          # 契约快照：capture 抓取 / diff 比对（只取数）
-└── references/
-    ├── contract-template.md          # 重构契约模板（SSOT：目标形态/不可变更项/验证命令）
-    ├── test-baseline.md              # 基线测试与「重构不变性」规则、失败分类
-    ├── agent-prompts.md              # 改造 / 对抗性审查 / 修复 三份子代理提示词模板
-    └── report-template.md            # 重构报告模板
-```
+- `SKILL.md` — 技能指令（唯一入口）
+- `scripts/contract-snapshot.py` — 契约快照：`capture` 抓取 / `diff` 比对（只取数，判定归 agent；仅标准库）
+- `references/contract-template.md` — 重构契约模板（SSOT：目标形态 / 不可变更项 / 验证命令 / 子代理公共约定）
+- `references/test-baseline.md` — 基线测试与「重构不变性」规则、失败分类
+- `references/agent-prompts.md` — 改造 / 对抗性审查 / 修复 三份子代理提示词模板
+- `references/report-template.md` — 重构报告模板
 
 ## 依赖
 
-仅 Python 3 标准库（`contract-snapshot.py`），无三方依赖。
+- Python 3（`contract-snapshot.py`，仅标准库，无三方依赖）
+- 子代理调度能力（`Agent` 工具，`subagent_type: general-purpose`，后台执行 + 轮询）
+- 项目构建与测试工具（编译 / 测试验证，命令以仓库 `AGENTS.md` 为准）
