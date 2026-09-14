@@ -50,6 +50,7 @@ lldwb-claude-skills/
 ├── install.py / install.sh / install.bat   # 安装到 ~/.claude/skills/
 ├── uninstall.py / uninstall.sh / uninstall.bat  # 卸载
 ├── check-version.py          # 发版校验：版本号三处对齐与 tag 可达（配合 .githooks/pre-push）
+├── release.py                # 按 tag 补齐 GitHub Release（正文取自 CHANGELOG.md 对应段落）
 ├── .githooks/pre-push        # 推送前自动校验（启用：git config core.hooksPath .githooks）
 ├── PLUGIN_README.md          # 插件使用说明
 ├── CHANGELOG.md
