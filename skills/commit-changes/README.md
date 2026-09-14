@@ -15,7 +15,7 @@
 - 提交后复核 `%s` / `%b` 已分离（缺空行会把正文并进标题）；信息被并入时 `--amend -F` 修正
 - 历史与对象清理（`reflog expire` / `gc --prune=now` / `filter-repo`）默认不做，确需时先取得明确同意并事后 `git fsck`
 - 确认请求无应答时：可逆改动按推荐方案继续并标注"未获确认"，不可逆改动停下等确认
-- 不自动 push / merge / PR，不 `--force`，不绕过钩子
+- 不自动 push / merge / PR（建 MR/PR 转 `create-mr`），不 `--force`，不绕过钩子
 
 ## 文件
 
