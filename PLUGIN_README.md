@@ -50,7 +50,7 @@
 | project-explain | 结合项目讲解概念（引用真实代码位置） |
 | repo-init | 仓库指引初始化（AGENTS.md 正文 + CLAUDE.md 指向） |
 | i18n-transform | 国际化改造（三条改造线，改造 / 审查 / 验证三角分离） |
-| spec-route | 开发规范路由（场景 → 章节定位，不复制规则） |
+| spec-route | 规范路由（`AGENTS.md` 场景 → 章节定位，不复制约定） |
 
 技能清单定义在 `.claude-plugin/marketplace.json`。
 
