@@ -25,10 +25,10 @@ python uninstall.py --all         # 卸载（或 python uninstall.py <技能名>
 
 `install.bat` / `install.sh` / `uninstall.bat` / `uninstall.sh` 是同名 `.py` 的包装。
 
-发版校验（版本号与 tag 一致性，约定见「架构」第 4 条）：
+发版校验（版本号按「架构」第 4 条分级选取；脚本只核对版本号与 tag 一致性，不定级）：
 
 ```bash
-python check-version.py           # 本地三项：版本号一致 / 注解 tag 存在 / tag 在当前分支可达
+python check-version.py           # 本地三项：版本号三处一致 / 注解 tag 存在 / tag 在当前分支可达
 python check-version.py --remote  # 追加远程：tag 已推送且指向的提交已在远程 main 上（需能访问 origin）
 git config core.hooksPath .githooks   # 启用 pre-push 钩子（每 clone 一次），推送前自动跑本地校验
 ```
@@ -53,7 +53,7 @@ python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目�
 1. **`skills/<技能名>/SKILL.md` 是唯一入口**。frontmatter 的 `name` + `description` 决定技能何时被自动触发——`description` 必须写清「做什么 + 何时用（用户原话语境）」，正文是给 agent 的执行指令、不是用户文档。同目录 `README.md` 面向人（简介/用法/文件与依赖），二者需同步。
 2. **两条分发路径**（新增 / 改名 / 删除技能必须同步）：① 安装脚本按根目录 `config.json` 的启用清单复制；② 插件模式读 `.claude-plugin/marketplace.json` 的 `plugins[].skills` 数组。此外还要同步 `README.md`、`PLUGIN_README.md` 的技能表与 `CHANGELOG.md`。
 3. **脚本只取数，判定归 agent**。`scripts/` 下所有脚本的共同设计：机械地拉取 / 解析 / 转换 / 落盘，**不替 agent 下结论**（是否 BUG、提交是否有问题，由 agent 推理）。扩展脚本时不要越界写判定逻辑。
-4. **版本三处对齐，发版打 tag，tag 与 main 一并推送**。版本号须在以下三处一致：`CHANGELOG.md` 的 `## [x.y.z]` 标题（记录改了什么）、`.claude-plugin/marketplace.json` 的 `version`（插件分发读取）、git 注解 tag `vX.Y.Z`（把版本钉到具体提交，可用 `git tag --contains <sha>` 反查某提交属于哪个版本）。发版顺序：改前两处 → 提交 → 对该提交打 `git tag -a vX.Y.Z -m "<说明>"` → tag 与 `main` 一并推送（`git push origin main --follow-tags`，只带注解 tag、与上面的 `-a` 配套）。一致性由 `check-version.py` 校验——启用 `core.hooksPath` 后 pre-push 自动拦截，`--remote` 追加远程核对（见「常用命令」）。**不留只存在于本地的 tag**：远端缺该 tag 时 `/tree/<tag>` 是 404，引用此版本的文档与链接全部失效；tag 还须指向已在远程 `main` 上的提交，避免「tag 打得开、`main` 上却看不到」的错位。不需要 release 资产或 CI 流程；回填历史 tag 只是补 ref，不改写历史。
+4. **版本号分级选取，三处对齐，发版打 tag，tag 与 main 一并推送**。版本号按改动幅度选取，沿用既有版本的实际分级：**大版本 `vX`** = 整体重构（结构性 / 破坏性改造，如技能改名）、**中版本 `vX.Y`** = 技能大改（新增 / 删除技能，或既有技能的流程与语义变更）、**小版本 `vX.Y.Z`** = 小修小改（表述统一、文档同步、小修小补与缺陷修复）。选定的版本号须在以下三处一致：`CHANGELOG.md` **顶部最新条目**的 `## [x.y.z]` 标题（记录改了什么；校验只认顶部一条，历史条目同为该形式但不参与对齐）、`.claude-plugin/marketplace.json` 的 `version`（插件分发读取）、git 注解 tag `vX.Y.Z`（把版本钉到具体提交，可用 `git tag --contains <sha>` 反查某提交属于哪个版本）。CHANGELOG 新条目末须列出 `.claude-plugin/marketplace.json` 的版本号变更行（A → B），历史条目不改写（记录当时事实）。发版顺序：改前两处 → 提交 → 对该提交打 `git tag -a vX.Y.Z -m "<说明>"` → tag 与 `main` 一并推送（`git push origin main --follow-tags`，只带注解 tag、与上面的 `-a` 配套）。一致性由 `check-version.py` 校验——只核对三处是否一致与 tag 是否可达、**不定级**（该升哪一位由人按上述规则判断）；启用 `core.hooksPath` 后 pre-push 自动拦截，`--remote` 追加远程核对（见「常用命令」）。**不留只存在于本地的 tag**：远端缺该 tag 时 `/tree/<tag>` 是 404，引用此版本的文档与链接全部失效；tag 还须指向已在远程 `main` 上的提交，避免「tag 打得开、`main` 上却看不到」的错位。不需要 release 资产或 CI 流程；回填历史 tag 只是补 ref，不改写历史。
 
 ### 跨技能共用约定（改脚本时别破坏）
 

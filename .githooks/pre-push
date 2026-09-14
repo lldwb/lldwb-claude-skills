@@ -1,6 +1,6 @@
 #!/bin/sh
-# 推送前校验版本与 tag 一致性（本地三项：版本号一致 / 注解 tag 存在 / tag 在当前分支可达），
-# 不通过则拒绝推送。约定见 AGENTS.md「架构」第 4 条。
+# 推送前校验版本与 tag 一致性（本地三项：版本号三处一致 / 注解 tag 存在 / tag 在当前分支可达），
+# 不通过则拒绝推送。版本号的分级选取见 AGENTS.md「架构」第 4 条；本钩子只校验一致性、不定级。
 #
 # 启用（每 clone 一次）: git config core.hooksPath .githooks
 # 临时跳过:            git push --no-verify
