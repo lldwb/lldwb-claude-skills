@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.5.0] - 2026-09-14
+
+新增 `create-mr` 技能，补齐「提交改动 → 生成合并请求」链路的最后一环；描述与创建参数均以官方 CLI 文档实测核证。
+
+### 新增
+
+- **新增 `create-mr` 技能**（技能总数 15 → 16）：生成合并请求（MR/PR）的标准工作流——解析分支（源默认当前分支；目标默认探测 `origin/HEAD` → `main`/`master`，要求先确认默认主分支名）→ 前置校验 → 自动生成四段式描述 → 确认后经 `gh` / `glab` 创建
+  - **防空合并请求**：前置校验覆盖「是 git 仓库 / 源与目标分支存在 / 源与目标非同一提交 / 有共同祖先 / 存在有效差异」五项，任一不满足即非零退出且不产出素材；「有领先提交但无文件差异」（空提交、仅合并）单列告警，避免描述里出现并不存在的代码改动
+  - **描述自动生成**：综合用户补充说明与该分支相对目标分支的提交记录与变更范围撰写，至少含「变更背景/目的、主要改动点、影响范围、测试验证情况」四段；要求每条有出处、**测试验证情况不得编造**；仓库存在 PR/MR 模板时（`.github/PULL_REQUEST_TEMPLATE*`、`.gitlab/merge_request_templates/*`）以模板章节为准
+  - **平台创建**：GitHub `gh pr create --base/--head/--title/--body-file`、GitLab `glab mr create --source-branch/--target-branch/--description-file/--yes`，并写明两条实测坑——`--head` 会跳过 gh 的建分支/建 fork 交互（源分支未推送时直接失败，须先推送）、`glab --fill` 会顺带 push 分支并覆盖描述（禁用）；无 CLI 或未识别平台时输出描述全文与手工创建页链接（GitHub `compare` / GitLab `merge_requests/new`）
+  - **远端状态取数**（只报事实不判定）：未推送 / 已推送但本地领先 / upstream 一致 / 仅存于远端 / 同名分支提交不一致；源分支未推送时**征得用户同意后**才 `git push -u origin <源分支>`
+  - **描述基线**：diff 以远端目标分支为基准（远端才是合并请求的基线），本地与远端不一致时素材提示先 `fetch` 再重算
+  - 边界：创建前展示标题与完整描述待确认；不 merge / 不删分支 / 不 `--force` / 不改代码；素材与描述落在 `<仓库根>/.tasks/create-mr/`，目录未被忽略时脚本提示（不入库）
+  - 含取数脚本 `scripts/prepare-mr.py`（只取数不判定，不创建合并请求）：分支解析与校验、`--pretty=medium` 保留标题与正文空行的提交记录、按目录聚合的变更范围、文件清单、diff（默认截断 400 行 + 完整 `raw.diff`）、平台识别与命令模板、模板探测
+- 边界互指：`commit-changes` 与 `feature-dev` 的「不自动 push / merge / 建 PR」补「用户要求建 MR/PR 时转 `create-mr`」
+- 同步技能清单分发路径：`README.md` / `PLUGIN_README.md` 技能表、`.claude-plugin/marketplace.json`（version 与 skills 数组）与 `config.json` 启用项
+
 ## [1.4.0] - 2026-09-12
 
 按三份真实开发会话的复盘结论加固技能：补"提交信息结构"与"确认无应答"两类缺口，把子代理复核的口径从"仅代码"放开到通用"事实源"，并把两份参考件的读取写进执行步骤。

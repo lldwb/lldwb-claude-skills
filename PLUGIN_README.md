@@ -28,7 +28,7 @@
 
 ## 包含的技能
 
-`dev-skills` 插件包含 15 个技能：
+`dev-skills` 插件包含 16 个技能：
 
 | Skill | 用途 |
 |-------|------|
@@ -44,6 +44,7 @@
 | unit-test | 单元测试生成 / 失败修复 |
 | doc-sync | 文档与代码同步（更新 / 修正 + 子代理复核；代码改造转 feature-dev） |
 | commit-changes | 提交 git 改动（拆分 / 显式 add / 中文信息 + 提交后结构复核） |
+| create-mr | 合并请求（MR/PR）生成（分支校验 / 四段式描述 / gh·glab 创建） |
 | comment-supplement | 注释补齐与修正（仅注释层面；与代码改动并存时用 fix-bug） |
 | explain-project | 结合项目讲解概念 |
 | lldwb-init | 仓库指引初始化（AGENTS.md 正文 + CLAUDE.md 指向） |
