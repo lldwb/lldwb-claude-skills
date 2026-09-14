@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!--
+  NAS 硬盘诊断报告模板（单文件 HTML）
+  用法：把采集到的数据填入下方 REPORT 数据区，其余渲染逻辑无需改动。
+  结构说明见 references/report-guide.md；品牌中文对照见 SKILL.md。
+  注意：报告中不得包含 SSH 账号 / 密码等凭据。
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NAS 硬盘诊断报告</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { --bg: #FFFFFF; --fg: #1F2329; --muted: #6B7280; --line: #E5E7EB; --card: #F5F7FA; }
+  body { margin: 0; padding: 24px; background: var(--bg); color: var(--fg);
+         font: 13px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 28px 0 12px; }
+  .meta { color: var(--muted); font-size: 12px; margin: 0 0 20px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .card { background: var(--card); border-radius: 8px; padding: 12px; }
+  .card .label { font-size: 11px; color: var(--muted); margin: 0 0 4px; }
+  .card .value { font-size: 22px; font-weight: 500; margin: 0; }
+  .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .slot { border-radius: 8px; padding: 10px; border: 1px solid; font-size: 12px; }
+  .slot .name { font-weight: 600; margin-bottom: 2px; }
+  .slot.healthy  { background: #E1F5EE; border-color: #5DCAA5; color: #085041; }
+  .slot.warning  { background: #FAEEDA; border-color: #FAC775; color: #633806; }
+  .slot.faulty   { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+  .slot.system   { background: #E6F1FB; border-color: #85B7EB; color: #042C53; }
+  .chart-wrap { background: var(--card); border-radius: 8px; padding: 16px; }
+  .disk { border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .disk h3 { margin: 0 0 10px; font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  td { padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.k { color: #0F6E56; width: 110px; white-space: nowrap; }
+  .tag { display: inline-block; padding: 0 6px; border-radius: 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>NAS 硬盘诊断报告</h1>
+<p class="meta">采样时间：<span id="sampledAt"></span> ｜ 目标：<span id="host"></span></p>
+
+<h2>总览</h2>
+<div class="cards" id="cards"></div>
+
+<h2>硬盘槽位状态</h2>
+<div class="slots" id="slots"></div>
+
+<h2>故障盘 SMART 关键指标（对数刻度）</h2>
+<div class="chart-wrap"><canvas id="smartChart" role="img" aria-label="故障盘 SMART 关键指标柱状图"></canvas></div>
+
+<h2>各盘通电时间对比</h2>
+<div class="chart-wrap"><canvas id="hoursChart" role="img" aria-label="各盘通电时间对比柱状图"></canvas></div>
+
+<h2>详细参数</h2>
+<div id="details"></div>
+
+<script>
+/* =========================================================================
+   数据区 —— 由诊断流程按采集结果填入（保留字段名，值与采集输出逐项一致）
+   status: healthy | warning | faulty ；system 为 true 时按系统盘配色
+   smart: 只填关键的几项原始值（缺失的用 null，图表自动跳过）
+   ========================================================================= */
+const REPORT = {
+  host: "<ip>",
+  sampledAt: "<YYYY-MM-DD HH:mm>",
+  summary: { online: 0, total: 0, faulty: 0, degraded: 0, safe: true },
+  disks: [
+    // {
+    //   slot: "1", model: "<型号>", brand: "<品牌>", capacity: "<容量>",
+    //   iface: "SATA", raid: "<阵列/状态>", hours: 0, temp: 0, system: false,
+    //   status: "healthy",
+    //   smart: { "5": 0, "197": 0, "198": 0, "187": 0, "188": 0, "199": 0 }
+    // }
+  ]
+};
+
+/* 品牌中文对照（SKILL.md 对照表的程序化版本，渲染时自动补全） */
+const BRAND_CN = {
+  "Phison": "群联", "LITEON": "建兴", "HGST": "昱科（原日立，现属西部数据）",
+  "Seagate": "希捷", "WD": "西部数据", "Samsung": "三星", "Toshiba": "东芝",
+  "Kingston": "金士顿", "Crucial": "英睿达"
+};
+
+const COLORS = { healthy: "#5DCAA5", warning: "#FAC775", faulty: "#E24B4A", system: "#85B7EB" };
+const SMART_LABELS = {
+  "5": "已重映射扇区\n(ID=5)", "197": "待处理坏扇区\n(ID=197)", "198": "离线不可纠正\n(ID=198)",
+  "187": "不可纠正错误\n(ID=187)", "188": "命令超时\n(ID=188)", "199": "UDMA CRC 错误\n(ID=199)"
+};
+const DANGER_IDS = ["197", "198", "187", "188"];
+
+/* ---------- 渲染 ---------- */
+document.getElementById("host").textContent = REPORT.host;
+document.getElementById("sampledAt").textContent = REPORT.sampledAt;
+
+const s = REPORT.summary;
+document.getElementById("cards").innerHTML = [
+  { label: "在线硬盘", value: s.online + " / " + s.total, color: "#1D9E75" },
+  { label: "故障硬盘", value: s.faulty, color: s.faulty > 0 ? "#E24B4A" : "#1D9E75" },
+  { label: "降级阵列", value: s.degraded, color: s.degraded > 0 ? "#EF9F27" : "#1D9E75" },
+  { label: "数据安全", value: s.safe ? "正常" : "有风险", color: s.safe ? "#1D9E75" : "#E24B4A" }
+].map(c => `<div class="card"><p class="label">${c.label}</p>` +
+           `<p class="value" style="color:${c.color}">${c.value}</p></div>`).join("");
+
+document.getElementById("slots").innerHTML = REPORT.disks.map(d => {
+  const cls = d.system ? "system" : (d.status || "healthy");
+  const brand = BRAND_CN[d.brand] ? d.brand + " " + BRAND_CN[d.brand] : d.brand;
+  return `<div class="slot ${cls}"><div class="name">盘位 ${d.slot}${d.system ? "（系统）" : ""}</div>` +
+         `<div>${d.capacity || ""} ${d.iface || ""}</div><div>${brand}</div><div>RAID：${d.raid || "-"}</div></div>`;
+}).join("");
+
+const faultyDisks = REPORT.disks.filter(d => d.status === "faulty" || d.status === "warning");
+const smartIds = Object.keys(SMART_LABELS).filter(id => faultyDisks.some(d => d.smart && d.smart[id] != null));
+new Chart(document.getElementById("smartChart"), {
+  type: "bar",
+  data: {
+    labels: smartIds.map(id => SMART_LABELS[id]),
+    datasets: faultyDisks.map(d => ({
+      label: "盘位 " + d.slot,
+      data: smartIds.map(id => d.smart && d.smart[id] != null ? Math.max(d.smart[id], 1) : 1),
+      backgroundColor: smartIds.map(id => DANGER_IDS.includes(id) ? "#E24B4A" : "#EF9F27")
+    }))
+  },
+  options: {
+    indexAxis: "y", responsive: true,
+    scales: { x: { type: "logarithmic", title: { display: true, text: "原始值（对数刻度，1 表示 0 或缺失）" } } },
+    plugins: { legend: { position: "bottom" } }
+  }
+});
+
+new Chart(document.getElementById("hoursChart"), {
+  type: "bar",
+  data: {
+    labels: REPORT.disks.map(d => "盘位 " + d.slot),
+    datasets: [{
+      label: "通电小时数",
+      data: REPORT.disks.map(d => d.hours || 0),
+      backgroundColor: REPORT.disks.map(d => d.system ? COLORS.system : (COLORS[d.status] || COLORS.healthy))
+    }]
+  },
+  options: {
+    responsive: true, scales: { y: { beginAtZero: true } },
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: c => c.parsed.y.toLocaleString() + " 小时（约 " + (c.parsed.y / 8760).toFixed(1) + " 年）" } }
+    }
+  }
+});
+
+document.getElementById("details").innerHTML = REPORT.disks.map(d => {
+  const brand = BRAND_CN[d.brand] ? d.brand + " " + BRAND_CN[d.brand] : d.brand;
+  const sm = d.smart || {};
+  const rows = [
+    ["品牌", brand], ["型号", d.model || "-"], ["容量 / 接口", (d.capacity || "-") + " / " + (d.iface || "-")],
+    ["RAID", d.raid || "-"], ["通电时间", (d.hours || 0).toLocaleString() + " 小时（约 " + ((d.hours || 0) / 8760).toFixed(1) + " 年）"],
+    ["温度", (d.temp != null ? d.temp + " °C" : "-")],
+    ["已重映射扇区 (5)", sm["5"] != null ? sm["5"] : "-"],
+    ["待处理坏扇区 (197)", sm["197"] != null ? sm["197"] : "-"],
+    ["离线不可纠正 (198)", sm["198"] != null ? sm["198"] : "-"],
+    ["不可纠正错误 (187)", sm["187"] != null ? sm["187"] : "-"],
+    ["命令超时 (188)", sm["188"] != null ? sm["188"] : "-"],
+    ["UDMA CRC 错误 (199)", sm["199"] != null ? sm["199"] : "-"]
+  ];
+  return `<div class="disk"><h3>盘位 ${d.slot} · ${brand} · ${d.model || ""} ` +
+         `<span class="tag" style="background:${COLORS[d.status] || COLORS.healthy}22;color:#333">${d.status || "healthy"}</span></h3>` +
+         `<table>${rows.map(r => `<tr><td class="k">${r[0]}</td><td>${r[1]}</td></tr>`).join("")}</table></div>`;
+}).join("");
+</script>
+</body>
+</html>
