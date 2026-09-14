@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.1.1] - 2026-09-14
+
+统一规范来源：移除全部「项目开发手册」表述，项目的约定一律以 **`AGENTS.md` 为唯一权威源**。
+
+### 变更
+
+- **移除「项目开发手册」相关表述（全仓 50 余处）**：技能正文、参考件与仓库文档中凡「`AGENTS.md` / 开发手册」并列表述的，统一收敛为 `AGENTS.md` 单一权威源；「先理解再动手」类要求改为「阅读 `AGENTS.md`，按其章节按需加载与本改动相关的部分，勿全文加载」，不再引导查找开发手册
+  - 涉及技能：`bug-fix` / `code-optimize` / `feature-dev` / `comment-supplement` / `refactor` / `commit-review` / `commit-create` / `doc-sync` / `unit-test` / `module-batch` / `repo-init` / `i18n-transform` / `mr-create` / `check-rule-extract`（各技能的 SKILL.md、README.md 与 references）；仓库根 `README.md`、`AGENTS.md`
+  - 提交规则统一短段的权威依据由「项目开发手册 / `AGENTS.md`」改为「项目 `AGENTS.md`」，11 处保持逐字一致
+- **`spec-route` 权威源由「开发手册」改为 `AGENTS.md`**（技能保留）：职责改为「按场景定位 `AGENTS.md` 的章节并按段读取」——Grep 章节标题取行号 + Read `offset/limit` 只读目标段，不全文加载；SKILL.md、README 与 `references/route-table-template.md` 同步改写，`README.md` / `PLUGIN_README.md` 的技能表同步
+- `.claude-plugin/marketplace.json` 版本号 2.1.0 → 2.1.1
+
+### 说明
+
+- `spec-route` 技能**保留**（未删除）：原设计服务于体量较大的项目规范文档，现改以 `AGENTS.md` 为权威源；项目没有 `AGENTS.md` 时该技能不适用。
+- 本次为纯表述与权威源收敛，不改任何技能的流程、安全条款与脚本接口；历史条目中的版本号与表述保持原样（记录事实）。
+
 ## [2.1.0] - 2026-09-14
 
 统一子代理派发粒度：由「按数量分批」改为「**一个单元一个子代理**」；并清理了历史提交中的项目专属与敏感内容。
