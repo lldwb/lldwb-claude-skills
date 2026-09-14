@@ -56,5 +56,6 @@
 
 ## 说明
 
+- 插件版本号（`.claude-plugin/marketplace.json` 的 `version`）与仓库 `CHANGELOG.md` 顶部条目、注解 tag `vX.Y.Z` 三处对齐——大版本 = 整体重构、中版本 = 技能大改、小版本 = 小修小改，可据此判断升级影响面（细则见 `AGENTS.md`「架构」第 4 条）。
 - 敏感配置（Kibana/数据库凭据）不随插件安装，需按各技能 `references/config.example.json` 模板在 `~/.claude/skills/<技能>/` 下本地创建。
 - 也可不用插件，直接运行 `install.sh` / `install.bat` 复制技能到 `~/.claude/skills/`。
