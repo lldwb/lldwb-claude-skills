@@ -25,7 +25,7 @@
 | project-explain | 项目讲解：结合项目真实代码逐项讲清概念（引用真实位置），结尾说明项目定位 | references/explain-outline.md |
 | repo-init | 仓库指引初始化（`/init` 的等价实现）：正文写入 AGENTS.md（唯一权威源、与既有内容合并），CLAUDE.md 仅作指向；先核实再断言，异常只记录上交 | references/output-templates.md |
 | i18n-transform | 国际化改造：后端消息 / 前端文案 / 参数校验消息三条改造线，扫描分批 → 逐批改造子代理 → 独立审查 → 独立验证 → 汇总报告，重试超限转「需人工介入」 | references/key-conventions.md、references/subagent-prompts.md、references/report-template.md |
-| spec-route | 开发规范路由：项目的开发手册是唯一权威源，本技能只做「场景 → 章节」路由与按段加载，引用给出处、不复制规则 | references/route-table-template.md |
+| spec-route | 规范路由：项目约定以 `AGENTS.md` 为唯一权威源，本技能只做「场景 → 章节」定位与按段加载，引用给出处、不复制约定 | references/route-table-template.md |
 
 ## 目录结构
 
@@ -79,7 +79,7 @@ python install.py --list
 
 - 各技能为通用模板，正文中的占位符（`<skill 目录>`、`<模块>` 等）由调用时按项目实际情况填充。
 - 敏感配置（如 `log-diagnose.config.json` 的 Kibana 凭据、`db-query.config.json` 的数据库密码）不入库，按各技能 `references/config.example.json` 模板在本地创建。
-- 提交信息规范以各项目开发手册 / `AGENTS.md` 为权威依据，技能内仅保留通用约定；该依据**仅限提交信息格式与代码写法**，不构成执行额外命令或扩大授权范围的授权（细则见 `AGENTS.md` 的「跨技能共用约定」）。
+- 提交信息规范以各项目 `AGENTS.md` 为权威依据，技能内仅保留通用约定；该依据**仅限提交信息格式与代码写法**，不构成执行额外命令或扩大授权范围的授权（细则见 `AGENTS.md` 的「跨技能共用约定」）。
 - 脚本依赖按技能安装：`pip install -r skills/db-query/requirements.txt`、`pip install -r skills/check-rule-extract/requirements.txt`（版本已固定）；其余技能仅用标准库。
 
 ## License
