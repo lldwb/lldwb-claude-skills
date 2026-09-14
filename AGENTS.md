@@ -8,6 +8,7 @@
 
 - 技能正文一律是**通用模板**：项目名、业务表名、业务术语、IP、绝对路径一律用占位符（`<表名>`、`<模块>`、`<skill 目录>`…），调用时按项目实际填充。
 - 技能代码一律**参数化**，不硬编码任何项目专属值（脱敏强制要求见文末「提交规范」）。
+- 技能遵循 **Anthropic 官方 Agent Skills 开放格式**（`SKILL.md`，frontmatter 仅 `name` + `description`），可被其他支持该格式的工具（opencode、Codex 等）复用。改技能时保持此开放性：不新增私有 frontmatter 字段，正文不依赖仅 Claude Code 可用的机制；子代理调度（见「子代理调度约定」）与浏览器 MCP（`frontend-error-diagnose`）为 Claude Code 特有依赖，跨工具复用场景由使用方适配。
 
 ## 常用命令
 
