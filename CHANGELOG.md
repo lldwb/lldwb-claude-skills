@@ -1,5 +1,60 @@
 # Changelog
 
+## [2.0.0] - 2026-09-14
+
+技能标准化改造：统一命名与组织规范、补齐骨架与附属文件、修正脱敏与规范漂移，并新增两个技能（技能总数 17 → 19）。**技能名有破坏性调整，升级后旧名不可用**，对照表见下。
+
+### Breaking
+
+- **技能改名（6 个）**：语序统一为「对象-动作」（名词在前、动词原形在后），消除同一仓库两种构词法并存；技能目录名与 frontmatter `name` 同步调整，旧名不再可用：
+
+  | 旧名 | 新名 | 改名理由 |
+  |------|------|---------|
+  | `fix-bug` | `bug-fix` | 语序统一（"bug fix" 本身即标准名词短语） |
+  | `create-mr` | `mr-create` | 语序统一 |
+  | `commit-changes` | `commit-create` | 语序统一；与 `commit-review` 成对（创建提交 / 评审提交），消除两者混淆 |
+  | `explain-project` | `project-explain` | 语序统一（同 `code-optimize` / `log-diagnose`） |
+  | `lldwb-init` | `repo-init` | 技能名不携带仓库品牌；description 改述为「`/init` 的等价实现」 |
+  | `controller-check` | `check-rule-extract` | 原名的动作落在 Controller 上，与实现（业务操作前置校验规则提取）不符 |
+
+- 改名同步了四条分发路径（`config.json` / `.claude-plugin/marketplace.json` / `README.md` / `PLUGIN_README.md`）、`AGENTS.md` 的脚本路径、技能间交叉引用与 `install.py` / `uninstall.py` 的用法示例；本文件按惯例保留历史条目的旧名（记录当时事实）。
+
+### Added
+
+- **新增 `i18n-transform` 技能（国际化改造）**：把硬编码文案改造为资源文件驱动，覆盖后端消息 / 前端文案 / 参数校验消息三条改造线
+  - **编排流水线**：扫描分批（单批 ≤ 5 文件，资源文件不参与计数）→ 逐批派改造子代理 → 独立只读审查子代理（🔴 致命 / 🟡 警告分级）→ 独立验证子代理（Key 集合一致 / 编码 / 映射完整 / 命名规范）→ 汇总报告
+  - **改造与审查分离**：审查与验证只读且不参与改造，两者对资源文件侧**刻意交叉覆盖**（以漏检为更大风险）；修复由独立子代理按最小改动执行、修复后必须复审；重试 ≤ 2 轮（全流程共享）后转「需人工介入」清单，不阻塞收尾也不静默放行
+  - **零业务逻辑修改**：只动文案与资源文件，方法签名 / SQL / 权限注解 / 校验参数一概不动；校验消息中的数字改用框架占位符保持通用
+  - **Key 规范**：命名结构（3~5 段按需取舍）、前缀归属表（按改造线分工、防前后端撞 Key）、多语言资源文件 Key 集合必须一致、非拉丁字符值侧转义而注释保留原文、追加不覆盖且改造前备份、本轮不收敛全局公共 Key
+  - 含 3 份参考件：`references/key-conventions.md`（Key 与资源文件格式）、`references/subagent-prompts.md`（改造 / 审查 / 验证三类子代理提示词 + 高频缺陷速查 + 分级判据）、`references/report-template.md`（改造报告与遗留问题报告）
+- **新增 `spec-route` 技能（开发规范路由）**：项目的开发手册是唯一权威源（SSOT），本技能只做「场景 → 章节」的路由与按段加载
+  - 用 Grep 定位章节标题取行号 + Read `offset/limit` 只读目标段，**不全文加载**手册；引用规范时给出 `文件:行` 出处，不复制、不改写、不概括规则内容
+  - 路由表（场景 / 章节序号 / 锚点标题 / 关键约束关键词）由项目填充并随使用回填；`references/route-table-template.md` 给出模板、填充步骤、读取指引与输出格式
+  - 各技能正文里「项目提供的规范路由 skill」的泛称统一改为按技能名互指 `spec-route`，消除悬空引用
+- **新增 11 份 references**（按「长模板 / 长清单 / 知识库才拆」的判据）：`bug-fix/root-cause-checklist.md`、`code-optimize/optimize-checklist.md`、`module-batch/{subagent-prompts,report-template,lessons}.md`、`check-rule-extract/output-and-rules.md`、`commit-review/review-checklist.md`、`unit-test/test-design-checklist.md`、`comment-supplement/comment-checklist.md`、`project-explain/explain-outline.md`、`frontend-error-diagnose/conclusion-template.md`、`feature-dev/plan-doc-template.md`
+
+### Changed
+
+- **统一 SKILL.md 七节骨架**：`角色 / 适用与边界 / 要求 / 执行步骤 / 验证 / 任务目标 / 注意事项 / 输入`；工具型技能允许在执行步骤后增列「用法 / 产出 / 描述结构」等节，基准节不得缺项。补齐了此前缺节的技能（`module-batch` 缺四节、`log-diagnose`、`db-query`、`check-rule-extract` 等），并把散在注意事项里的「技能边界」上提为独立的「适用与边界」节
+- **统一 description 三段式**：`做什么 + 关键纪律` → `何时用（引用户原话）` → `即使未明确说"用 skill"…` → `边界互指`；触发场景关键词**只增不减**
+- **统一 README 五段式**：`简介 / 使用（含边界）/ 能力 / 文件 / 依赖`
+- **git 提交规则 SSOT 收敛**：8 个技能各自携带的 30~60 行重复条款收敛为**逐字一致的短段**（先审查 / 显式 add / 中文信息与标题正文空行 / 提交前后自检 / 默认提交后汇报 / 不自动 push），完整细则只在 `commit-create` 保留（提交环节的 SSOT 源，其余技能指向它）；同时消除已漂移的口径差异（重复的 `refact` 类型、三种确认口径、部分技能缺敏感信息自检）
+- **`feature-dev` 引入变更提案制**：规划文档固定为 `proposal.md`（做什么 / 为什么）+ `design.md`（怎么做）+ `tasks.md`（可勾选步骤）三件套，任务完成一项**立即**勾 `- [x]`、收尾核对无未勾选项；「何时落盘三件套、何时只在对话里出方案」的判据见 `references/plan-doc-template.md`
+- **`module-batch` 补全编排要素**：新增「要求 / 验证 / 注意事项」节、`## 任务目标` 纠位（原错嵌在提交规则之下）、子代理提示词模板（任务说明 / 异常回报 / 审查 / 修复）与收尾报告模板（含失败集合对比与需人工介入清单）；与 `refactor` 的分工写明（本技能供 worktree 并行机制，`refactor` 定改什么与怎么验收）；经验教训速查去技术栈化后抽到 `references/lessons.md`
+- **`check-rule-extract` 减负**：正文由 28 KB 降至 23 KB，「最终输出模板」与「通用规则说明」抽到 `references/output-and-rules.md`；结构对齐七节骨架；CLI 用法示例中的本机绝对路径改为占位符
+- **`commit-review` 检查维度清单化**：七个维度（逻辑与边界 / 依赖影响面 / 分层与耦合 / 契约变更影响面 / 废弃 API / 风格与仓库约定一致性 / 提交信息规范）连同「怎么查 → 命中后怎么写进结论」抽到 `references/review-checklist.md`，按「严重 / 规范 / 建议」分级并留项目扩展钩子
+- **`unit-test` 用例设计与失败归属判定**抽到 `references/test-design-checklist.md`（用例设计 / 隔离策略 / 必须遵守与禁止 / 失败归属 / 验证循环）
+- **`refactor` 落盘路径统一**为 `<项目根>/.tasks/refactor/`（此前契约写 `.claude/refactor/`、报告写 `.tasks/refactor/`，两处不一致）；`references/contract-template.md` 新增「子代理公共约定」一节（改造 / 审查 / 修复三类子代理共用）
+
+### Fixed
+
+- **脱敏违规**：`bug-fix` 提交规则里把具体业务缩写当例示——整句删除；`check-rule-extract` CLI 示例里的本机绝对路径改为 `<输出目录>` 等占位符；`i18n-transform` 的 Key 示例去掉业务缩写
+- **规范漂移**：`code-optimize` 与 `module-batch` 提交类型表中的非规范类别 `refact` 统一为 `refactor`；`module-batch` 正文提及的具体 AI CLI 工具名删除
+- **结构缺陷**：`module-batch` 的 `### 任务目标` 从「提交 git 规则」节下提升为 `##`
+- **文档与实现不符**：`db-query` README 的「SQL 白名单」改为与实际一致的「脚本拦截」（脚本实现为写关键字黑名单判定）；`log-diagnose` 文档中显式 `--config` 的产物路径与脚本实际输出对齐（`~/Downloads/<env>/`，不拼 `log-diagnosis` 段）并补 `--kw` 参数说明；`mr-create` 的校验结论来源写明为脚本 stdout
+- **技能自包含**：`log-diagnose` 正文引用 `commit-review` 的脚本路径改为按技能名互指；全仓清理跨技能文件路径引用
+- **补齐丢失的约束**：`repo-init` 补回「提交信息不带 `Co-Authored-By` 类署名」；`unit-test` 与 `check-rule-extract` 的提交口径恢复为「默认提交后汇报」（此前被静默收窄为条件提交）；`check-rule-extract` 补回 `<菜单权限表>` 与 `<扫描范围>` 的占位符定义
+
 ## [1.6.0] - 2026-09-14
 
 新增 `refactor` 技能，把多个实际项目中沉淀的「结构改造、行为不变」编排实践抽象为通用重构工作流；同步收紧 `code-optimize` 的触发边界。

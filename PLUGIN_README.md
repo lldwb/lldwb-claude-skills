@@ -28,27 +28,29 @@
 
 ## 包含的技能
 
-`dev-skills` 插件包含 17 个技能：
+`dev-skills` 插件包含 19 个技能：
 
 | Skill | 用途 |
 |-------|------|
 | bug-fix | Bug 修复标准工作流（纯注释问题转 comment-supplement） |
-| feature-dev | 需求开发全流程（需求分析 → 方案 → 实现 → 实测 → 提交；纯文档产出转 doc-sync） |
+| feature-dev | 需求开发全流程（需求分析 → 方案 → 规划文档三件套 → 实现 → 实测 → 提交；纯文档产出转 doc-sync） |
 | code-optimize | 代码优化（小范围）标准工作流（结构性/分层重构转 refactor） |
 | refactor | 重构（结构改造、行为不变）：契约先行 + 测试基线 + 改造与审查分离 + 循环验证（小范围优化转 code-optimize） |
-| commit-review | 提交评审（只检查不改代码） |
+| commit-review | 提交评审（七维核查，只检查不改代码） |
 | log-diagnose | 日志自动诊断（Kibana，BUG 出双 MD） |
 | db-query | 数据库查询（生产只读） |
-| module-batch | 多模块并行改造（worktree + 子代理） |
-| check-rule-extract | Controller 校验规则提取 |
+| module-batch | 多模块并行改造（worktree + 子代理 + 独立审查） |
+| check-rule-extract | 业务操作前置校验规则提取（输出 Excel 工作簿） |
 | frontend-error-diagnose | 前端报错诊断（浏览器 MCP 复现，只诊断不改代码） |
 | unit-test | 单元测试生成 / 失败修复 |
 | doc-sync | 文档与代码同步（更新 / 修正 + 子代理复核；代码改造转 feature-dev） |
-| commit-create | 提交 git 改动（拆分 / 显式 add / 中文信息 + 提交后结构复核） |
+| commit-create | 提交 git 改动（拆分 / 显式 add / 中文信息 + 提交后结构复核；提交环节 SSOT） |
 | mr-create | 合并请求（MR/PR）生成（分支校验 / 四段式描述 / gh·glab 创建） |
 | comment-supplement | 注释补齐与修正（仅注释层面；与代码改动并存时用 bug-fix） |
-| project-explain | 结合项目讲解概念 |
+| project-explain | 结合项目讲解概念（引用真实代码位置） |
 | repo-init | 仓库指引初始化（AGENTS.md 正文 + CLAUDE.md 指向） |
+| i18n-transform | 国际化改造（三条改造线，改造 / 审查 / 验证三角分离） |
+| spec-route | 开发规范路由（场景 → 章节定位，不复制规则） |
 
 技能清单定义在 `.claude-plugin/marketplace.json`。
 

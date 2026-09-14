@@ -67,7 +67,7 @@ python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目�
 
 ### 子代理调度约定
 
-`module-batch`（多模块并行改造）、`check-rule-extract`（逐 Controller 追溯校验规则）等技能以 **Agent 工具 `subagent_type: general-purpose` + `run_in_background=true` + 轮询任务输出** 调度子代理；调度方只做编排、校验落盘、合并结果，**不替子代理做追溯/改造**。改这些技能时保持「调度与执行分离」。（`doc-sync` 的文档复核子代理是**单次同步调用**——需拿到结论后再改文档，不在此列。）
+`module-batch`（多模块并行改造）、`check-rule-extract`（逐 Controller 追溯校验规则）、`i18n-transform`（国际化改造的扫描/改造/审查/验证流水线）等技能以 **Agent 工具 `subagent_type: general-purpose` + `run_in_background=true` + 轮询任务输出** 调度子代理；调度方只做编排、校验落盘、合并结果，**不替子代理做追溯/改造**。改这些技能时保持「调度与执行分离」与「改造与审查分离（审查/验证只读、修复后必须复审）」。（`doc-sync` 的文档复核子代理是**单次同步调用**——需拿到结论后再改文档，不在此列。）
 
 ## 已知坑
 
