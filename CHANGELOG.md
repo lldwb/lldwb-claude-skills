@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.1.3] - 2026-09-14
+
+修复 `mr-create` 的推送前置条件：由「只要不是『已推送且与 upstream 一致』就先推送」改为按源分支状态键处置，修正在 `remote-only` 等状态下必然失败的推送指引。
+
+### 修复
+
+- **`mr-create` 推送前置条件改按状态键处置**：`SKILL.md` 新增「推送源分支（按状态键处置）」表，把 9 个状态键（`up-to-date` / `pushed-no-tracking` / `not-pushed` / `ahead` / `remote-only` / `behind` / `diverged` / `pushed-diverged` / `pushed-unknown`）逐行对应到处置——只有 `not-pushed` / `ahead` 需推送且每次单独征得用户同意，`remote-only` 不推送（远端分支本身就是合并请求的 head），`behind` / `diverged` / `pushed-diverged` / `pushed-unknown` 停下报告、一律不 `--force`；推送口径单点定义于该表，「要求 / 执行步骤 / 平台创建 / 验证 / 注意事项」改为指向它
+  - 原规则对 `remote-only` 输出的 `git push -u origin <源分支>` 必然失败（本地无该分支，`src refspec ... does not match any`）；对 `diverged` / `pushed-diverged` 需 `--force`（本技能禁止）；对 `behind` 是空操作，且素材 diff 取本地分支、平台 head 取远端，描述与平台将合入的内容不一致
+- **`prepare-mr.py`：素材与 stdout 暴露状态键、只报事实**：素材「源分支推送状态」段改为「状态键 + 事实 + 依据」，删除对全部非一致状态统一输出的推送命令；补「依据：本地 remote-tracking，未 fetch 时可能过期」与「本地与远端源分支提交不一致（素材 diff 取本地分支、平台 head 取远端）」两条事实行；状态键 `pushed` 更名 `pushed-unknown` 并写明领先 / 落后无法判定
+- **取数前先 `git fetch origin`**：源分支与目标分支一致适用，fetch 失败则继续取数并注明状态可能过期——源分支推送状态取自本地 remote-tracking，未 fetch 时会把「已分叉」误报为「本地领先」
+- **`README.md` 同步**：远端状态按状态键逐态列出、模板探测补齐脚本实际支持的仓库根 `PULL_REQUEST_TEMPLATE.md`（原文只列 `.github/PULL_REQUEST_TEMPLATE*` 与 `.gitlab/merge_request_templates/*`）、安全边界改为按状态推送；`SKILL.md` / `README.md` 同步补 fetch 建议
+
+### 说明
+
+- 本次为缺陷修复 + 文档同步（小版本）：未新增 / 删除技能，技能步骤数不变，常规路径（未推送 / 本地领先 / 已一致）行为不变；变化集中在 `remote-only` / `behind` / `diverged` / `pushed-diverged` 等此前会给出错误动作或误导性结论的状态。
+- 验证：本地用例集 38 项全过，含 `remote-only` 下 `git push -u origin <分支>` 实测失败证据、未 fetch 与 fetch 后状态对比（`ahead` → `diverged`）、状态键与 `SKILL.md` 表格的一致性校验；用例集为本地过程产物（`.tasks/`），不入库。
+- `.claude-plugin/marketplace.json` 版本号 2.1.2 → 2.1.3
+
 ## [2.1.2] - 2026-09-14
 
 补齐版本号描述：把既有版本实际使用的分级（大版本 = 整体重构、中版本 = 技能大改、小版本 = 小修小改）写入约定，并校正一处与实际校验口径不符的描述。
