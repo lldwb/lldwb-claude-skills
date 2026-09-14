@@ -16,7 +16,7 @@
     当前目录是 git 仓库 / 源与目标分支存在 / 两者不是同一提交 /
     两分支有共同祖先 / 源分支相对目标分支存在有效差异（有领先提交或文件差异）
 
-输出（默认落在 <仓库根>/.tasks/create-mr/）:
+输出（默认落在 <仓库根>/.tasks/mr-create/）:
     mr-<源>-to-<目标>.material.md   元信息 + 远端状态 + 变更范围 + 提交记录 + 文件清单 + diff + 创建通道
     mr-<源>-to-<目标>.raw.diff      完整 diff（不截断）
 stdout: 校验结论 + 关键事实 + 输出路径
@@ -389,7 +389,7 @@ def main():
     ap.add_argument("--max-diff-lines", type=int, default=DEFAULT_MAX_DIFF_LINES,
                     help="素材中差异显示行数上限，默认 %d（raw.diff 始终完整）" % DEFAULT_MAX_DIFF_LINES)
     ap.add_argument("--out-dir", default=None,
-                    help="素材输出目录（默认 <仓库根>/.tasks/create-mr）")
+                    help="素材输出目录（默认 <仓库根>/.tasks/mr-create）")
     args = ap.parse_args()
 
     ok, out, _ = git_ok("rev-parse", "--show-toplevel")
@@ -454,7 +454,7 @@ def main():
     groups = group_changes(numstat)
 
     # ---- 落盘
-    out_dir = os.path.abspath(args.out_dir or os.path.join(repo_root, ".tasks", "create-mr"))
+    out_dir = os.path.abspath(args.out_dir or os.path.join(repo_root, ".tasks", "mr-create"))
     os.makedirs(out_dir, exist_ok=True)
     stem = "mr-%s-to-%s" % (safe_name(source["name"]), safe_name(target["name"]))
     mat_path = os.path.join(out_dir, stem + ".material.md")

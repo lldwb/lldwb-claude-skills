@@ -4,7 +4,7 @@
 lldwb-claude-skills 卸载脚本：删除 ~/.claude/skills/ 下已安装的技能目录。
 
 用法:
-    python uninstall.py fix-bug       # 卸载指定技能
+    python uninstall.py bug-fix       # 卸载指定技能
     python uninstall.py --all         # 卸载本仓库安装的全部技能（按 config.json 技能清单）
 """
 import sys

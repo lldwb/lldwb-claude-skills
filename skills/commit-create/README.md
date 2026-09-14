@@ -1,10 +1,10 @@
-# commit-changes
+# commit-create
 
 提交工作区改动到本地 git 的标准工作流（commit 专员）：先审查 `git status` / `git diff`，按单一职责拆分提交，显式 `git add` 指定文件，撰写中文提交信息。
 
 ## 使用
 
-用户要求"把当前工作区已修改的文件提交到本地仓库""按模块拆分提交""帮我写 commit 信息并提交"时自动触发；也可显式要求"用 commit-changes skill 提交这批改动"。被 `fix-bug` / `code-optimize` 等技能引用的"commit 专员"环节即本技能。
+用户要求"把当前工作区已修改的文件提交到本地仓库""按模块拆分提交""帮我写 commit 信息并提交"时自动触发；也可显式要求"用 commit-create skill 提交这批改动"。被 `bug-fix` / `code-optimize` 等技能引用的"commit 专员"环节即本技能。
 
 ## 能力
 
@@ -15,7 +15,7 @@
 - 提交后复核 `%s` / `%b` 已分离（缺空行会把正文并进标题）；信息被并入时 `--amend -F` 修正
 - 历史与对象清理（`reflog expire` / `gc --prune=now` / `filter-repo`）默认不做，确需时先取得明确同意并事后 `git fsck`
 - 确认请求无应答时：可逆改动按推荐方案继续并标注"未获确认"，不可逆改动停下等确认
-- 不自动 push / merge / PR（建 MR/PR 转 `create-mr`），不 `--force`，不绕过钩子
+- 不自动 push / merge / PR（建 MR/PR 转 `mr-create`），不 `--force`，不绕过钩子
 
 ## 文件
 

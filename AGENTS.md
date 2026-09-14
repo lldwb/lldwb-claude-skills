@@ -17,7 +17,7 @@
 
 ```bash
 python install.py                 # 安装全部启用技能
-python install.py fix-bug         # 只安装指定技能
+python install.py bug-fix         # 只安装指定技能
 python install.py --list          # 列出技能与启用状态
 python install.py --dry-run       # 只打印将执行的复制
 python uninstall.py --all         # 卸载（或 python uninstall.py <技能名>）
@@ -41,10 +41,10 @@ python skills/db-query/scripts/db-query.py --sql "SELECT ..." --env prod  # 查�
 python skills/log-diagnose/scripts/log-diagnose.py --list-envs            # Kibana：列出环境
 python skills/log-diagnose/scripts/log-diagnose.py <trace_id> 30d --env prod
 python skills/commit-review/scripts/check-commit.py <修订号>              # 提交取数落盘（不做判定）
-python skills/controller-check/scripts/build_check_xlsx.py --tasks <片段目录> --out <xlsx> --source "<本册来源>"
+python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目录> --out <xlsx> --source "<本册来源>"
 ```
 
-三方依赖按技能独立安装：`pip install -r skills/db-query/requirements.txt`（db-query）、`pip install -r skills/controller-check/requirements.txt`（controller-check，版本已固定）；其余仅用标准库。
+三方依赖按技能独立安装：`pip install -r skills/db-query/requirements.txt`（db-query）、`pip install -r skills/check-rule-extract/requirements.txt`（check-rule-extract，版本已固定）；其余仅用标准库。
 
 ## 架构
 
@@ -67,7 +67,7 @@ python skills/controller-check/scripts/build_check_xlsx.py --tasks <片段目录
 
 ### 子代理调度约定
 
-`module-batch`（多模块并行改造）、`controller-check`（逐 Controller 追溯校验规则）等技能以 **Agent 工具 `subagent_type: general-purpose` + `run_in_background=true` + 轮询任务输出** 调度子代理；调度方只做编排、校验落盘、合并结果，**不替子代理做追溯/改造**。改这些技能时保持「调度与执行分离」。（`doc-sync` 的文档复核子代理是**单次同步调用**——需拿到结论后再改文档，不在此列。）
+`module-batch`（多模块并行改造）、`check-rule-extract`（逐 Controller 追溯校验规则）等技能以 **Agent 工具 `subagent_type: general-purpose` + `run_in_background=true` + 轮询任务输出** 调度子代理；调度方只做编排、校验落盘、合并结果，**不替子代理做追溯/改造**。改这些技能时保持「调度与执行分离」。（`doc-sync` 的文档复核子代理是**单次同步调用**——需拿到结论后再改文档，不在此列。）
 
 ## 已知坑
 
