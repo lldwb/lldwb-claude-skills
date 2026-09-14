@@ -93,4 +93,8 @@ python install.py --list
 
 ## License
 
-MIT
+GPL-3.0
+
+本仓库以 GNU General Public License v3.0 开源：允许使用、修改与分发，但衍生作品必须以相同协议（GPL-3.0）开源（copyleft）。完整条款见根目录 `LICENSE`。
+
+Copyright (C) 2026 lldwb
