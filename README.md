@@ -1,6 +1,6 @@
 # lldwb-claude-skills
 
-从业务项目实践中抽象出的 16 个通用工作流技能（Agent Skills），供其他项目复用。
+从业务项目实践中抽象出的 17 个通用工作流技能（Agent Skills），供其他项目复用。
 每个技能是一个自包含目录，含 `SKILL.md`（frontmatter: `name` + `description`）及所需的脚本/参考文件/README。
 
 ## 技能列表
@@ -9,7 +9,8 @@
 |-------|------|---------|
 | fix-bug | Bug 修复标准工作流：先理解再动手、四段式定位、编译/测试验证、按仓库规范提交（纯注释问题转 comment-supplement） | — |
 | feature-dev | 需求开发全流程：需求分析 → 方案设计（含可行性核证）→ 规划文档 → 分层实现 → 端到端实测 → 提交（纯文档产出转 doc-sync） | references/feasibility-check.md、references/e2e-verify.md |
-| code-optimize | 代码优化工作流：SSOT、保持对外行为不变、commit 专员式提交 | — |
+| code-optimize | 代码优化（小范围）工作流：SSOT、保持对外行为不变、commit 专员式提交（结构性/分层重构转 refactor） | — |
+| refactor | 重构（结构改造、对外行为不变）：契约先行（目标形态 + 不可变更项）→ 测试基线 → 改造与审查分离（独立子代理对抗性审查）→ 编译/审查/测试循环验证 → 报告与提交（小范围优化转 code-optimize） | scripts/contract-snapshot.py、references/（契约模板 / 测试基线 / 子代理提示词 / 报告模板） |
 | commit-review | 提交评审：取数落盘 → 探索调用链 → 分层/契约/@Deprecated 检查 + 提交信息结构检查，只检查不改代码 | scripts/check-commit.py |
 | log-diagnose | 日志自动诊断：按 trace_id + 时间窗从 Kibana 拉日志、六类故障分类法、BUG 时产出双 MD（修复任务 + 事故报告） | scripts/log-diagnose.py、references/config.example.json |
 | db-query | 数据库查询：生产只读（三重保障）、测试写需用户确认，安全铁律（禁 select *、单条语句、控制数据量） | scripts/（db-query / gen-fix-sql / run-sql-file / sync-table / db_common）、references/config.example.json、requirements.txt |
@@ -70,7 +71,7 @@ python install.py --list
 /plugin install dev-skills@lldwb-claude-skills
 ```
 
-安装后即可按技能名直接使用（如 "修复这个 bug" / "评审提交 abc1234" / "按 trace_id 排查日志" / "给这段代码生成单元测试" / "把工作区改动按模块提交" / "把当前分支提个 MR"）。详见 `PLUGIN_README.md`。
+安装后即可按技能名直接使用（如 "修复这个 bug" / "评审提交 abc1234" / "按 trace_id 排查日志" / "给这段代码生成单元测试" / "把工作区改动按模块提交" / "把当前分支提个 MR" / "把业务逻辑从入口层重构到服务层"）。详见 `PLUGIN_README.md`。
 
 ## 使用注意
 
