@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.2.1] - 2026-09-14
+
+授权许可从 MIT 改为 GPL-3.0（更严格的开源协议）：`LICENSE` 替换为 GPL-3.0 官方文本，README 许可说明同步更新，版权署名 lldwb。
+
+### 变更
+
+- **授权许可从 MIT 改为 GPL-3.0**：`LICENSE` 由 MIT 替换为 GPL-3.0 官方文本（copyleft，衍生作品须以相同协议开源），README 底部 `License: MIT` 改为 GPL-3.0 许可说明，版权署名 lldwb。
+- **版本号同步**：`.claude-plugin/marketplace.json` 的 `version` 由 `2.2.0` → `2.2.1`。
+
+### 说明
+
+- 本次为文档与许可政策变更（不涉及技能功能），取**小版本**；技能正文、脚本与分发能力零改动。
+
 ## [2.2.0] - 2026-09-14
 
 吸收合并 7 个外部技能：新增 5 个技能（`opencode-batch` / `nas-disk-diagnostic` / `git-clean-branches` / `git-rollback` / `git-worktree`），另将 `git-commit` 与 `workflow` 的能力分别并入既有技能 `commit-create` 与 `feature-dev`；技能总数 19 → 24。
