@@ -14,14 +14,16 @@
 
 仓库无构建、无 lint、无自动化测试与 CI；Python 3 脚本改动后用 `--dry-run` / `--list-envs` / `--help` 等手工验证。
 
-安装 / 卸载（按根目录 `config.json` 的启用清单，把 `skills/<技能名>/` 复制到 `~/.claude/skills/`）：
+安装 / 卸载（按根目录 `config.json` 的启用清单，把 `skills/<技能名>/` 复制到 `~/.claude/skills/`；覆盖同名技能与卸载前会先把原目录备份到 `~/.claude/backup/lldwb-skills/<时间戳>/`，安装状态记在同目录的 `state.json`，删掉该目录即清空安装器在用户机的足迹）：
 
 ```bash
-python install.py                 # 安装全部启用技能
+python install.py                 # 安装全部启用技能（覆盖前自动备份）
 python install.py bug-fix         # 只安装指定技能
-python install.py --list          # 列出技能与启用状态
-python install.py --dry-run       # 只打印将执行的复制
-python uninstall.py --all         # 卸载（或 python uninstall.py <技能名>）
+python install.py --list          # 列出技能、启用状态与已安装版本
+python install.py --dry-run       # 只打印将执行的复制与备份（不写备份与状态）
+python install.py --list-backups  # 列出备份
+python install.py --restore <技能名> [--backup <时间戳>]   # 从备份恢复（目标已存在时拒绝覆盖）
+python uninstall.py --all         # 卸载（或 python uninstall.py <技能名>，删除前自动备份）
 ```
 
 `install.bat` / `install.sh` / `uninstall.bat` / `uninstall.sh` 是同名 `.py` 的包装。
