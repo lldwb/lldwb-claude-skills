@@ -1,5 +1,37 @@
 # Changelog
 
+## [2.2.0] - 2026-09-14
+
+吸收合并 7 个外部技能：新增 5 个技能（`opencode-batch` / `nas-disk-diagnostic` / `git-clean-branches` / `git-rollback` / `git-worktree`），另将 `git-commit` 与 `workflow` 的能力分别并入既有技能 `commit-create` 与 `feature-dev`；技能总数 19 → 24。
+
+### 新增
+
+- **`opencode-batch`（新增）**：多模块并行改造编排（opencode CLI 版）——每模块一个 worktree + 一个子代理在 worktree 内 `opencode run --command <命令>`；阶段 0 前置检查（CLI 可用 / `.opencode` 已跟踪 / 测试凭据可解 / 外部依赖连通 / 主分支就绪 / 命令定义完备等）→ 阶段 1 并行执行与中断通报 → 阶段 2 合并 → 阶段 3 提交收尾；`references/lessons.md` 收录示例经验（占位符化，按项目技术栈替换）
+  - 与 `module-batch` 的分工在两个技能中互指：`module-batch` = 通用 worktree 并行机制（子代理直接执行），本技能 = 经 opencode CLI 中转的执行编排（多出 CLI 与命令定义前置检查、opencode 中断处置）
+- **`nas-disk-diagnostic`（新增）**：NAS 硬盘诊断与可视化报告——SSH 采集（文件系统 / RAID / 块设备 / dmesg）→ SMART 深度诊断 → 坏盘可修复性评估 → 报告 → 分级建议；核心知识点为扩展卡（如 ASMedia ASM1166）上的硬盘必须 `smartctl -d sat`，否则误报无 SMART 能力
+  - `scripts/nas_diagnostic.py`（只取数不下结论；补 `_ensure_utf8()`、paramiko 延迟导入使 `--help` 不因缺依赖崩溃、支持 `NAS_PASSWORD` 传密码）、`references/smart-guide.md`、`references/report-guide.md`、`assets/report_template.html`（补建源技能缺失的模板）、`requirements.txt`（paramiko）
+- **`git-clean-branches`（新增，仅显式调用）**：清理已合并 / 过期分支——默认 dry-run 只出清单、保护分支清单（`git config branch.cleanup.protected`，支持通配符）一律不删、未合并分支默认不删、远程删除单独确认；补「动分支前先核 HEAD 与工作区」护栏
+- **`git-rollback`（新增，仅显式调用）**：分支回滚到历史版本（`reset` / `revert`）——默认 dry-run、`reset` 前先建备份分支、受保护分支额外确认、不提供 `--force`、不自动强推 / push；补「动非当前分支用 `git branch -f`，不用 `git reset --hard`」护栏
+- **`git-worktree`（新增）**：worktree 管理（`add` / `list` / `remove` / `prune` / `migrate`）——统一目录约定（默认 `<主仓库同级>/.zcf/<项目名>/`，可按项目约定替换）、主仓库路径推导、绝对路径防嵌套、环境文件按 `.gitignore` 复制、内容 / stash 迁移
+
+### 变更
+
+- **`commit-create` 吸收 `git-commit`（增补，不重写）**：新增「可选能力」一节——emoji 前缀（type → emoji 映射）、显式指定 type / scope 覆盖自动推断、仅用 Git 的轻量路径（不依赖包管理器 / 构建工具）、`--amend` 修补上次提交（限未推送分支）、`BREAKING CHANGE` 与 git trailer 脚注、`--no-verify` 边界；「拆分判定」补规模阈值行（> 300 行或跨多个顶级目录先给拆分方案并给出各组的 pathspec）
+  - **未采纳**源技能「默认可跳过钩子」的取向：仍保持「钩子报错修问题本身、默认不跳过」，仅用户显式要求时例外并在汇报中注明；提交规则仍单点定义在本技能（SSOT），不在他处重复
+- **`feature-dev` 吸收 `workflow`（增补，不重写）**：澄清歧义步骤补需求完整性评分（目标明确性 3 / 预期结果 3 / 边界范围 2 / 约束条件 2，低于 7 分先补齐关键信息）；新增「可选：交互式六阶段模式」一节（研究 → 构思 → 计划 → 执行 → 优化 → 评审，含模式标签、阶段门禁、执行后**自动**优化自检（仅本次改动）、评审对账、时间戳取真值）
+  - **未引入**源技能的计划目录约定（`.zcf/plan/current → history`）：计划文档位置与命名仍按 `references/plan-doc-template.md`，归档只作为该模式的可选收尾动作
+- **新技能形态适配仓库约定**：源技能为「斜杠命令」形态（`allowed-tools` + slash 用法正文），统一改写为技能口径（`description` 写清「做什么 + 何时用 + 边界」、正文为执行指令）；`git-clean-branches` / `git-rollback` 保留 `disable-model-invocation: true`（含删除、历史改写的危险操作只允许显式调用），其余新技能可自动触发
+- **脱敏与通用化**：源技能中的项目专属内容（模块名、包路径、业务符号、本机绝对路径）一律占位符化——`opencode-batch` 的经验教训移入 `references/lessons.md` 并标注「示例经验，按项目技术栈替换」；`nas-disk-diagnostic` 的本机 Python 解释器路径改为 `pip install -r requirements.txt`
+- **外部依赖写明降级路径**：`nas-disk-diagnostic` 的内联展示改为「有内联能力则内联、否则落盘 HTML 并提示用浏览器打开」；`git-worktree` 的 IDE 打开命令不在 PATH 时跳过并提示，不报错中断
+- **分发与文档同步**：`README.md`（技能表 19 → 24 行、首段数量、`disable-model-invocation` 例外说明、依赖子代理调度的技能清单补 `opencode-batch`）、`PLUGIN_README.md`（技能表与数量）、`.claude-plugin/marketplace.json`（`skills` 数组与插件 `description`）、`config.json`（本地启用清单，不入库）
+
+### 说明
+
+- 本次为**技能大改（新增技能）**，取**中版本**；既有 17 个技能零改动（`commit-create` / `feature-dev` 为增补式扩充，原有流程与安全条款不变）。
+- 新技能均为自包含目录（`SKILL.md` + `README.md`；`nas-disk-diagnostic` 另含脚本 / 参考件 / 模板 / 依赖清单）。
+- 未改 `install.py` / `uninstall.py` / `check-version.py`：新技能经既有清单机制自动覆盖两条分发路径。
+- `.claude-plugin/marketplace.json` 版本号 2.1.3 → 2.2.0
+
 ## [2.1.3] - 2026-09-14
 
 修复 `mr-create` 的推送前置条件：由「只要不是『已推送且与 upstream 一致』就先推送」改为按源分支状态键处置，修正在 `remote-only` 等状态下必然失败的推送指引。

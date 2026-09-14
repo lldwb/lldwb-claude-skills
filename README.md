@@ -1,6 +1,6 @@
 # lldwb-claude-skills
 
-从业务项目实践中抽象出的 19 个通用工作流技能（Agent Skills），供其他项目复用。
+从业务项目实践中抽象出的 24 个通用工作流技能（Agent Skills），供其他项目复用。
 每个技能是一个自包含目录，含 `SKILL.md`（frontmatter: `name` + `description`）及所需的脚本/参考文件/README。
 
 本仓库技能遵循 **Anthropic 官方 Agent Skills 开放格式**（`SKILL.md`，frontmatter 以 `name` + `description` 为准），非 Claude Code 私有格式，可被支持该格式的其他 agent 工具复用：opencode 原生兼容（发现路径含 `~/.claude/skills/`），Codex 亦支持但需置于 `.agents/skills/`（个人或项目级）。例外：`git-clean-branches` / `git-rollback`（含删除分支、改写历史等危险操作）另带 Claude Code 专用字段 `disable-model-invocation: true`，只能显式调用、不参与自动触发；该字段不被其他工具识别时会被忽略，不影响复用。注意：`module-batch` / `opencode-batch` / `check-rule-extract` / `i18n-transform` 等技能正文依赖 Claude Code 的子代理调度，`frontend-error-diagnose` 依赖浏览器 MCP，跨工具复用时需按对方工具适配；安装脚本与 Plugin marketplace 仅服务于 Claude Code。
@@ -10,7 +10,7 @@
 | Skill | 用途 | 附属文件 |
 |-------|------|---------|
 | bug-fix | Bug 修复标准工作流：先理解再动手、四段式定位、编译/测试验证、按仓库规范提交（纯注释问题转 comment-supplement） | references/root-cause-checklist.md |
-| feature-dev | 需求开发全流程：需求分析 → 方案设计（含可行性核证）→ 规划文档（proposal/design/tasks 三件套 + 任务勾选）→ 分层实现 → 端到端实测 → 提交（纯文档产出转 doc-sync） | references/feasibility-check.md、references/e2e-verify.md、references/plan-doc-template.md |
+| feature-dev | 需求开发全流程：需求分析 → 方案设计（含可行性核证）→ 规划文档（proposal/design/tasks 三件套 + 任务勾选）→ 分层实现 → 端到端实测 → 提交；支持六阶段交互模式（研究 → 构思 → 计划 → 执行 → 优化 → 评审）（纯文档产出转 doc-sync） | references/feasibility-check.md、references/e2e-verify.md、references/plan-doc-template.md |
 | code-optimize | 代码优化（小范围）工作流：SSOT、保持对外行为不变、按 commit-create 口径提交（结构性/分层重构转 refactor） | references/optimize-checklist.md |
 | refactor | 重构（结构改造、对外行为不变）：契约先行（目标形态 + 不可变更项）→ 测试基线 → 改造与审查分离（独立子代理对抗性审查）→ 编译/审查/测试循环验证 → 报告与提交（小范围优化转 code-optimize） | scripts/contract-snapshot.py、references/（契约模板 / 测试基线 / 子代理提示词 / 报告模板） |
 | commit-review | 提交评审：取数落盘 → 探索调用链 → 七维核查（逻辑边界 / 依赖影响面 / 分层耦合 / 契约影响面 / 废弃 API / 风格一致性 / 提交信息），只检查不改代码 | scripts/check-commit.py、references/review-checklist.md |
@@ -21,13 +21,18 @@
 | frontend-error-diagnose | 前端报错诊断：浏览器 MCP 复现取证（console / 网络 / 调用栈）→ 根因 → 可执行方案，只诊断不改代码 | references/browser-evidence-checklist.md、references/conclusion-template.md |
 | unit-test | 单元测试：生成（覆盖分支与边界、可运行可通过）/ 修复失败（默认不自行执行，交用户验证） | references/test-design-checklist.md |
 | doc-sync | 文档与代码同步：由文档定位代码确认变更 → 更新 / 修正偏差，子代理复核一致性（事实源不限于代码；代码改造转 feature-dev） | references/verify-agent.md |
-| commit-create | 提交 git 改动（提交环节 SSOT）：单一职责拆分、显式 add、中文提交信息（标题/正文空行 + 提交后结构复核），不自动 push | — |
+| commit-create | 提交 git 改动（提交环节 SSOT）：单一职责拆分、显式 add、中文提交信息（标题/正文空行 + 提交后结构复核），不自动 push；可选 emoji 前缀 / 显式 type·scope / 仅 Git 轻量路径 / `--amend`（限未推送分支） | — |
 | mr-create | 合并请求（MR/PR）生成：分支校验（防空 MR）→ 四段式描述自动生成 → 确认后经 gh/glab 创建，无 CLI 时输出描述与手工创建链接 | scripts/prepare-mr.py |
 | comment-supplement | 注释补齐与修正：补全缺失 + 修正失效描述，仅注释层面，不确定项交用户确认（与代码改动并存时用 bug-fix） | references/comment-checklist.md |
 | project-explain | 项目讲解：结合项目真实代码逐项讲清概念（引用真实位置），结尾说明项目定位 | references/explain-outline.md |
 | repo-init | 仓库指引初始化（`/init` 的等价实现）：正文写入 AGENTS.md（唯一权威源、与既有内容合并），CLAUDE.md 仅作指向；先核实再断言，异常只记录上交 | references/output-templates.md |
 | i18n-transform | 国际化改造：后端消息 / 前端文案 / 参数校验消息三条改造线，扫描分批 → 逐批改造子代理 → 独立审查 → 独立验证 → 汇总报告，重试超限转「需人工介入」 | references/key-conventions.md、references/subagent-prompts.md、references/report-template.md |
 | spec-route | 规范路由：项目约定以 `AGENTS.md` 为唯一权威源，本技能只做「场景 → 章节」定位与按段加载，引用给出处、不复制约定 | references/route-table-template.md |
+| opencode-batch | 多模块并行改造编排（opencode CLI 版）：每模块一个 worktree + 一个子代理跑 opencode 命令，前置检查 + 中断处置 + 合并提交 | references/lessons.md |
+| nas-disk-diagnostic | NAS 硬盘诊断与可视化报告：SSH 采集 RAID / SMART、坏盘可修复性评估、生成报告（扩展卡硬盘须 `smartctl -d sat`） | scripts/nas_diagnostic.py、references/（SMART 解读 / 报告指南）、assets/report_template.html、requirements.txt |
+| git-clean-branches | 分支清理：已合并 / 过期分支，默认 dry-run、保护分支清单、远程删除单独确认（仅显式调用） | — |
+| git-rollback | 分支回滚到历史版本：reset / revert，默认 dry-run + 备份分支 + 受保护分支额外确认（仅显式调用） | — |
+| git-worktree | worktree 管理：统一目录创建 / 列出 / 删除 / 清理，内容迁移与环境文件复制 | — |
 
 ## 目录结构
 
@@ -75,7 +80,7 @@ python install.py --list
 /plugin install dev-skills@lldwb-claude-skills
 ```
 
-安装后即可按技能名直接使用（如 "修复这个 bug" / "评审提交 abc1234" / "按 trace_id 排查日志" / "给这段代码生成单元测试" / "把工作区改动按模块提交" / "把当前分支提个 MR" / "把业务逻辑从入口层重构到服务层"）。详见 `PLUGIN_README.md`。
+安装后即可按技能名直接使用（如 "修复这个 bug" / "评审提交 abc1234" / "按 trace_id 排查日志" / "给这段代码生成单元测试" / "把工作区改动按模块提交" / "把当前分支提个 MR" / "把业务逻辑从入口层重构到服务层" / "清理已合并的分支" / "查一下 NAS 硬盘"）。详见 `PLUGIN_README.md`。
 
 ## 使用注意
 
