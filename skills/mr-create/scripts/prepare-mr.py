@@ -20,6 +20,9 @@
     mr-<源>-to-<目标>.material.md   元信息 + 远端状态 + 变更范围 + 提交记录 + 文件清单 + diff + 创建通道
     mr-<源>-to-<目标>.raw.diff      完整 diff（不截断）
 stdout: 校验结论 + 关键事实 + 输出路径
+
+源分支推送状态给 `state`（状态键，键名即技能「推送源分支」表的行键）与事实描述，
+**不判定该不该推送**——处置规则由调用方 agent 按技能表格执行。
 """
 import argparse
 import codecs
@@ -136,7 +139,11 @@ def default_target_name():
 # ---------------------------------------------------------------- 远端状态
 
 def push_state(node, src_ref):
-    """取源分支的远端推送状态（只报事实，不判定该不该推送）。"""
+    """取源分支的远端推送状态（只报事实，不判定该不该推送）。
+
+    state 为状态键，是技能「推送源分支」表中处置规则的行键——**改键名须同步该表**；
+    text 为面向读者的事实描述，二者一一对应。
+    """
     if node["local_sha"] is None:
         return {"state": "remote-only", "upstream": None, "ahead": None, "behind": None,
                 "text": "本地无同名分支，源分支直接取 origin/%s（%.8s）"
@@ -168,8 +175,8 @@ def push_state(node, src_ref):
                         "text": "已推送（upstream=%s）：本地落后 %d 个提交" % (upstream, behind)}
             return {"state": "up-to-date", "upstream": upstream, "ahead": 0, "behind": 0,
                     "text": "已推送且与 upstream 一致（%s）" % upstream}
-        return {"state": "pushed", "upstream": upstream, "ahead": None, "behind": None,
-                "text": "已推送（upstream=%s）" % upstream}
+        return {"state": "pushed-unknown", "upstream": upstream, "ahead": None, "behind": None,
+                "text": "已推送（upstream=%s），但本地与远端的领先/落后关系无法判定" % upstream}
 
     remote_ref = "refs/remotes/origin/" + node["name"]
     remote_sha = ref_sha(remote_ref)
@@ -320,9 +327,14 @@ def render_material(ctx, max_diff_lines):
         add("- 提示: %s" % ctx["target_note"])
     add("")
     add("## 源分支推送状态")
-    add("- %s" % ctx["push"]["text"])
-    if ctx["push"]["state"] != "up-to-date":
-        add("- 需要时推送: `git push -u origin %s`（由 agent 征得用户同意后执行）" % ctx["source"]["name"])
+    add("- 状态键: %s" % ctx["push"]["state"])
+    add("- 事实: %s" % ctx["push"]["text"])
+    add("- 依据: 本地 remote-tracking（未 fetch 时可能过期，先 `git fetch origin` 再重跑本脚本）")
+    src = ctx["source"]
+    if src["local_sha"] and src["remote_sha"] and src["local_sha"] != src["remote_sha"]:
+        add("- 注意: 本地 %s 与 origin/%s 提交不一致（本地 %.8s / 远端 %.8s）——"
+            "素材 diff 取本地分支，平台合并请求的 head 取 origin/%s"
+            % (src["name"], src["name"], src["local_sha"], src["remote_sha"], src["name"]))
     add("")
     add("## 变更范围（按目录聚合）")
     if ctx["groups"]:
@@ -490,7 +502,10 @@ def main():
     print("    目标分支: %s  (%.8s)  diff 基准=%s" % (target["name"], tgt_sha, base_ref))
     print("    领先提交: %d   变更文件: %d   %s" % (commits_ahead, files_changed,
                                                 shortstat or "(无增删行)"))
-    print("    推送状态: %s" % push["text"])
+    print("    推送状态: %s — %s" % (push["state"], push["text"]))
+    if source["local_sha"] and source["remote_sha"] and source["local_sha"] != source["remote_sha"]:
+        print("    注意: 本地 %s 与 origin/%s 提交不一致（素材 diff 取本地分支，平台 head 取远端）"
+              % (source["name"], source["name"]))
     print("    平台:     %s   可用 CLI: %s" % (platform["kind"],
                                             " ".join(platform["clis"]) or "(无)"))
     if commits_ahead and files_changed == 0:
