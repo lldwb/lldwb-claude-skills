@@ -1,10 +1,12 @@
 # commit-create
 
-提交工作区改动到本地 git 的标准工作流（commit 专员）：先审查 `git status` / `git diff`，按单一职责拆分提交，显式 `git add` 指定文件，撰写中文提交信息。
+提交工作区改动到本地 git 的标准工作流（commit 专员）：先审查 `git status` / `git diff`，按单一职责拆分提交，显式 `git add` 指定文件，撰写中文提交信息。**本技能是提交环节的唯一实现（SSOT 源）**——其他技能只保留最短的提交规则并指向本技能，不重复展开。
 
 ## 使用
 
-用户要求"把当前工作区已修改的文件提交到本地仓库""按模块拆分提交""帮我写 commit 信息并提交"时自动触发；也可显式要求"用 commit-create skill 提交这批改动"。被 `bug-fix` / `code-optimize` 等技能引用的"commit 专员"环节即本技能。
+用户要求"把当前工作区已修改的文件提交到本地仓库""按模块拆分提交""阅读改动帮我写中文 commit 信息并提交"时自动触发；也可显式要求"用 commit-create skill 提交这批改动"。各技能引用的"commit 专员"环节、以及"按规范提交 git"的落点，即本技能。
+
+**边界**：用户要求建 MR / PR 时用 `mr-create`；评审某个已有提交 / 分支的质量用 `commit-review`；需要先改代码的用对应的开发技能（如 `bug-fix` / `feature-dev`）。
 
 ## 能力
 
@@ -12,10 +14,10 @@
 - 显式 `git add`（禁用 `-A` / `.`）+ `git diff --staged` 复核暂存内容
 - 提交前自检：本地产物混入、敏感信息（凭据/IP/真实数据/本地路径）、未跟踪新文件遗漏
 - 提交信息遵循项目规范（Conventional Commits、中文、无署名），fix 类按四段式组织；标题与正文之间空一行，多行信息走消息文件 + `git commit -F`
-- 提交后复核 `%s` / `%b` 已分离（缺空行会把正文并进标题）；信息被并入时 `--amend -F` 修正
-- 历史与对象清理（`reflog expire` / `gc --prune=now` / `filter-repo`）默认不做，确需时先取得明确同意并事后 `git fsck`
+- 提交后核验 `%s` / `%b` 已分离、`git show --stat` 文件清单与批次一致；信息被并入时 `--amend -F` 修正（限未推送的本地分支）
+- 历史与对象清理（`reflog expire` / `gc --prune=now` / `filter-repo`）默认不做，确需时先说明不可逆后果并取得明确同意，事后 `git fsck`
 - 确认请求无应答时：可逆改动按推荐方案继续并标注"未获确认"，不可逆改动停下等确认
-- 不自动 push / merge / PR（建 MR/PR 转 `mr-create`），不 `--force`，不绕过钩子
+- 不自动 push / merge / PR（建 MR/PR 转 `mr-create`），不 `--force`，不改写已推送的历史，不绕过钩子
 
 ## 文件
 
@@ -23,4 +25,5 @@
 
 ## 依赖
 
-- git
+- git（本技能只用 git 命令读写本地仓库）
+- 无其他依赖：不调用项目构建工具、测试框架或脚本（编译 / 测试由上游技能在提交前完成）
