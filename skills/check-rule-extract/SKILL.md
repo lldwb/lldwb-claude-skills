@@ -1,5 +1,5 @@
 ---
-name: controller-check
+name: check-rule-extract
 description: 业务操作前置校验规则提取 — 以菜单为入口（范围参数支持菜单完整路径或菜单名称，无菜单体系的项目可直接按 Controller 类名），通过菜单权限明细数据源定位菜单地址→Controller，协调调度子代理逐 Controller 追溯 Service/Validator 校验逻辑，合并生成业务管控逻辑 Excel 工作簿（.xlsx，通用列格式，项目可传 --template 覆盖为既有表格样式）。当用户要求"提取/梳理各接口操作前校验规则""生成管控逻辑收集表/操作前检查表""梳理某菜单下保存/删除/锁定/解锁前置校验"时使用。本 skill 仅做编排调度，不直接追溯代码。
 ---
 
@@ -45,7 +45,7 @@ description: 业务操作前置校验规则提取 — 以菜单为入口（范�
 ### 1.1 语法
 
 ```
-controller-check <范围参数> [输出选项]
+check-rule-extract <范围参数> [输出选项]
 ```
 
 - `<范围参数>`：必填，指定本次要分析的**菜单**（完整路径或名称）或 **Controller 类名**，见「二、范围参数规则」
@@ -55,27 +55,27 @@ controller-check <范围参数> [输出选项]
 
 ```bash
 # 按【菜单完整路径】分析——系统管理-用户管理-用户查询（默认并发 5）
-controller-check 系统管理-用户管理-用户查询
+check-rule-extract 系统管理-用户管理-用户查询
 
 # 按【菜单名称】分析——用户查询（默认并发 5）
-controller-check 用户查询
+check-rule-extract 用户查询
 
 # 多个菜单，逗号分隔
-controller-check 系统管理-用户管理-用户查询,系统管理-用户管理-角色查询
+check-rule-extract 系统管理-用户管理-用户查询,系统管理-用户管理-角色查询
 
 # 无菜单体系：直接按 Controller 类名
-controller-check UserController,RoleController
+check-rule-extract UserController,RoleController
 
 # 指定并发数 / 逐批确认 / 指定输出位置
-controller-check 用户查询 --parallel 3
-controller-check 用户查询 --step
-controller-check 用户查询 --out <输出目录>\校验规则.xlsx
+check-rule-extract 用户查询 --parallel 3
+check-rule-extract 用户查询 --step
+check-rule-extract 用户查询 --out <输出目录>\校验规则.xlsx
 
 # 自定义菜单数据源覆盖默认表（可选；不传时读 <菜单权限表>）
-controller-check 用户查询 --menu-url <下载目录>\菜单地址清单.txt
+check-rule-extract 用户查询 --menu-url <下载目录>\菜单地址清单.txt
 
 # 对接既有表格样式：传输出格式模板
-controller-check 用户查询 --template <输出目录>\collect-template.json
+check-rule-extract 用户查询 --template <输出目录>\collect-template.json
 ```
 
 ### 1.3 输出选项
@@ -273,7 +273,7 @@ python <skill 目录>/scripts/build_check_xlsx.py \
 
 ## 七、执行指令
 
-收到 `controller-check <范围参数>` 调用时，按以下步骤执行：
+收到 `check-rule-extract <范围参数>` 调用时，按以下步骤执行：
 
 1. **解析范围**：按「二、范围参数规则」解析入参，有菜单体系时读菜单数据源匹配菜单 → 反查 Controller；无菜单体系时按 Controller 类名定位（**先做参数校验，未匹配则报错并列出可用菜单/Controller**）
 2. **收集菜单及权限角色数据**（有菜单体系时）：已传 `--menu-url <文件>` 直接读取；未传则读取 `<菜单权限表>` 的明细表（xlrd 读取，建立菜单路径、菜单地址与「权限点 → 有权限角色列表」映射）。该数据仅用于范围定位、收尾核对汇报与权限角色提取，**不写入输出 Excel**
@@ -299,17 +299,17 @@ python <skill 目录>/scripts/build_check_xlsx.py \
 ## 输入
 
 ```
-controller-check <范围参数> [输出选项]
+check-rule-extract <范围参数> [输出选项]
 ```
 
 - `<范围参数>`：`菜单完整路径`（如 `系统管理-用户管理-用户查询`）｜ `菜单名称`（如 `用户查询`）｜ `Controller类名`（如 `UserController`，逗号分隔可多个）
 - `[输出选项]`：`--parallel N`（Controller 级并发数，默认 5，N=1 即串行）｜ `--step`（逐批确认，与并发互斥、强制串行）｜ `--out <path>`（最终工作簿输出位置，默认用户下载目录）｜ `--menu-url <文件>`（菜单及权限角色数据源，未指定时默认读 `<菜单权限表>`，用于菜单定位与权限角色提取，不写入输出）｜ `--template <JSON>`（输出格式模板，缺省内置通用模板）
 
 > 💡 **调用速查**：
-> - 按菜单路径：`controller-check 系统管理-用户管理-用户查询`（默认并发 5，默认不逐批确认，输出到下载目录）
-> - 按菜单名称：`controller-check 用户查询`
-> - 按 Controller：`controller-check UserController,RoleController`（无菜单体系时）
-> - 多范围：`controller-check 用户查询,角色查询`
-> - 低并发：`controller-check 用户查询 --parallel 3` ｜ 逐批确认：`controller-check 用户查询 --step`（强制串行）
-> - 指定输出：`controller-check 用户查询 --out <输出目录>\校验规则.xlsx`（目录自动创建）
-> - 对接既有表格样式：`controller-check 用户查询 --template <输出目录>\collect-template.json`
+> - 按菜单路径：`check-rule-extract 系统管理-用户管理-用户查询`（默认并发 5，默认不逐批确认，输出到下载目录）
+> - 按菜单名称：`check-rule-extract 用户查询`
+> - 按 Controller：`check-rule-extract UserController,RoleController`（无菜单体系时）
+> - 多范围：`check-rule-extract 用户查询,角色查询`
+> - 低并发：`check-rule-extract 用户查询 --parallel 3` ｜ 逐批确认：`check-rule-extract 用户查询 --step`（强制串行）
+> - 指定输出：`check-rule-extract 用户查询 --out <输出目录>\校验规则.xlsx`（目录自动创建）
+> - 对接既有表格样式：`check-rule-extract 用户查询 --template <输出目录>\collect-template.json`

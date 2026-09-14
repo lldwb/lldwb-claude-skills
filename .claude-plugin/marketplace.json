@@ -9,7 +9,7 @@
       "name": "dev-skills",
       "description": "通用开发工作流技能：需求开发全流程、bug 修复、代码优化、重构（结构改造）、提交改动与提交评审、合并请求（MR/PR）生成、单元测试、注释补齐、前端报错诊断、文档与代码同步、项目讲解、仓库指引初始化、日志诊断、数据库查询、多模块并行改造、Controller 校验规则提取",
       "skills": [
-        "fix-bug",
+        "bug-fix",
         "feature-dev",
         "code-optimize",
         "refactor",
@@ -17,15 +17,15 @@
         "log-diagnose",
         "db-query",
         "module-batch",
-        "controller-check",
+        "check-rule-extract",
         "frontend-error-diagnose",
         "unit-test",
         "doc-sync",
-        "commit-changes",
+        "commit-create",
         "comment-supplement",
-        "explain-project",
-        "lldwb-init",
-        "create-mr"
+        "project-explain",
+        "repo-init",
+        "mr-create"
       ],
       "commands": [],
       "agents": []

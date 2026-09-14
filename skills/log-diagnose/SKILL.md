@@ -28,7 +28,7 @@ description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环�
 5. 用仓库检索（`grep`/`glob`/`read`）把根因 stack 帧映射到 `file:line`，确认异常确由应用代码抛出。**映射后必须核对涉及代码当时的提交**：先 `git log --before=<故障时间> <线上分支> -- <文件>` / `git blame` **定位**线上对应分支在故障时间点的 commit（记录 hash/日期/分支）；再 `python <skill 目录>/scripts/check-commit.py <sha>`（或 `commit-review` skill 的取数脚本）**检视**该提交——脚本输出含该提交相对父提交的完整 diff（raw.diff），足以核对"缺陷是否由此提交引入"、故障版本代码的改动点；必要时 `git diff <sha> -- <文件>` 对照当前工作区差异。若工作区代码与线上不一致（行号/逻辑漂移），以线上 commit 对应版本为准并在报告中注明，防止用错误版本代码分析出错误根因。
 6. 数据佐证（可选）：根因涉及具体数据（单据状态、del_flag、审批流等）时，用 `db-query` skill（若项目未安装，则用项目的数据库查询能力/脚本）查库核对数据状态佐证判定。**生产只读**，只查不改；测试环境写操作须先获用户确认。
 7. 输出：
-   - **BUG** → 按下方【产出】小节写两份 MD：修复任务 MD（`<yyyyMMdd-HHmmss>-<trace_id>.md`，含根因代码 commit 核对）+ 独立事故报告 MD（`<yyyyMMdd-HHmmss>-<trace_id>-事故报告.md`），在 chat 告知两份路径与一句话结论，**不要自动派发**（用户自行开 agent 执行，可用 `fix-bug` skill）。
+   - **BUG** → 按下方【产出】小节写两份 MD：修复任务 MD（`<yyyyMMdd-HHmmss>-<trace_id>.md`，含根因代码 commit 核对）+ 独立事故报告 MD（`<yyyyMMdd-HHmmss>-<trace_id>-事故报告.md`），在 chat 告知两份路径与一句话结论，**不要自动派发**（用户自行开 agent 执行，可用 `bug-fix` skill）。
    - 其余类别 → 仅在 chat 给诊断报告（症状/根因/证据/处置建议），不写 MD。
 
 ## 分类法
@@ -103,7 +103,7 @@ description: 日志自动诊断 — 按 trace_id + 时间窗从 Kibana（多环�
 
 ## 建议派发 agent
 
-将下方修复指令整体复制，交给用户执行修复（可用 `fix-bug` skill）即可快速修复；各字段从上文对应小节复制填充：
+将下方修复指令整体复制，交给用户执行修复（可用 `bug-fix` skill）即可快速修复；各字段从上文对应小节复制填充：
 
 ```plain
 <bug 描述>

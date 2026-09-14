@@ -1,4 +1,4 @@
-# controller-check
+# check-rule-extract
 
 业务操作前置校验规则提取：以**菜单**为入口（范围参数支持菜单完整路径或菜单名称，也可直接按 Controller 类名），通过菜单权限明细数据源定位菜单地址 → Controller，协调调度子代理逐 Controller 追溯 Service/Validator 校验逻辑，合并生成**业务管控逻辑 Excel 工作簿（.xlsx）**。
 

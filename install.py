@@ -6,7 +6,7 @@ lldwb-claude-skills 安装脚本：按 config.json 中 enabled=true 的技能，
 
 用法:
     python install.py                  # 安装 config.json 中启用的全部技能
-    python install.py fix-bug          # 仅安装指定技能
+    python install.py bug-fix          # 仅安装指定技能
     python install.py --list           # 列出可用技能与启用状态
     python install.py --dry-run        # 只打印将执行的复制，不实际安装
 """

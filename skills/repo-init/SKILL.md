@@ -1,9 +1,9 @@
 ---
-name: lldwb-init
-description: 仓库指引初始化（/init 的 lldwb 版）——为项目首次接入 Claude Code 时生成或更新 agent 指引文档，正文一律写入 AGENTS.md（唯一权威源，与既有内容合并、不覆盖），CLAUDE.md 只保留指向 AGENTS.md 的声明、不承载内容。当用户要求"初始化这个项目 / 仓库""执行 /init""生成或补全 CLAUDE.md / AGENTS.md 的指引""给新克隆的仓库做 agent 指引"时使用——先探索仓库（README、构建脚本、目录结构、既有约定）并用 git / grep 核实事实再动笔、不编造；落盘后做 git 核验（是否被忽略、改动归属），发现的问题只记录并交用户决策，提交前先问用户。即使未明确说"用 skill"，只要涉及 AGENTS.md / CLAUDE.md 的生成或更新就应使用。
+name: repo-init
+description: 仓库指引初始化（`/init` 的等价实现，指引正文统一归 AGENTS.md）——为项目首次接入 Claude Code 时生成或更新 agent 指引文档，正文一律写入 AGENTS.md（唯一权威源，与既有内容合并、不覆盖），CLAUDE.md 只保留指向 AGENTS.md 的声明、不承载内容。当用户要求"初始化这个项目 / 仓库""执行 /init""生成或补全 CLAUDE.md / AGENTS.md 的指引""给新克隆的仓库做 agent 指引"时使用——先探索仓库（README、构建脚本、目录结构、既有约定）并用 git / grep 核实事实再动笔、不编造；落盘后做 git 核验（是否被忽略、改动归属），发现的问题只记录并交用户决策，提交前先问用户。即使未明确说"用 skill"，只要涉及 AGENTS.md / CLAUDE.md 的生成或更新就应使用。
 ---
 
-# 仓库指引初始化（/init · lldwb 版）
+# 仓库指引初始化（`/init` 的等价实现）
 
 ## 角色
 
@@ -49,7 +49,7 @@ git diff -- AGENTS.md                      # 复核既有内容是否被原样�
 
 ## git 提交规则
 
-提交信息的结构、格式、类型与 scope **以项目开发手册 / `AGENTS.md` 的提交规范为权威依据**（单点定义，不在此重复）；项目没有专门规范时按通用约定（约定式提交、中文、显式 `git add`、不自动 push）。本技能自身产出的提交只含 `AGENTS.md` / `CLAUDE.md` 两个文件，**禁止** `git add -A` / `git add .`；初始化过程中用户追加的其他改动（补 `README.md`、调构建配置等）按 `commit-changes` 的拆分规则**另起提交**，不与指引文档混在一个提交里。更完整的提交流程（拆分判定、暂存复核、提交前自检）用 `commit-changes` 技能。
+提交信息的结构、格式、类型与 scope **以项目开发手册 / `AGENTS.md` 的提交规范为权威依据**（单点定义，不在此重复）；项目没有专门规范时按通用约定（约定式提交、中文、显式 `git add`、不自动 push）。本技能自身产出的提交只含 `AGENTS.md` / `CLAUDE.md` 两个文件，**禁止** `git add -A` / `git add .`；初始化过程中用户追加的其他改动（补 `README.md`、调构建配置等）按 `commit-create` 的拆分规则**另起提交**，不与指引文档混在一个提交里。更完整的提交流程（拆分判定、暂存复核、提交前自检）用 `commit-create` 技能。
 
 ### 执行步骤
 
