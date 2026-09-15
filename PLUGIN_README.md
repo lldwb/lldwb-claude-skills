@@ -56,6 +56,8 @@
 | git-clean-branches | 分支清理（已合并 / 过期；默认 dry-run + 保护清单） |
 | git-rollback | 分支回滚（reset / revert；默认 dry-run + 备份分支） |
 | git-worktree | worktree 管理（统一目录 + 内容迁移 + 环境文件复制） |
+| git-history-rewrite | 历史改写（备份分支 + 方案先行 + 时间恢复 + 四重验证 + 强推） |
+| session-summary | 会话总结与 skills 迭代（总结 + 优化点评估 + 实施） |
 
 技能清单定义在 `.claude-plugin/marketplace.json`。
 

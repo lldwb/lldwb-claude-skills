@@ -33,6 +33,8 @@
 | git-clean-branches | 分支清理：已合并 / 过期分支，默认 dry-run、保护分支清单、远程删除单独确认（仅显式调用） | — |
 | git-rollback | 分支回滚到历史版本：reset / revert，默认 dry-run + 备份分支 + 受保护分支额外确认（仅显式调用） | — |
 | git-worktree | worktree 管理：统一目录创建 / 列出 / 删除 / 清理，内容迁移与环境文件复制 | — |
+| git-history-rewrite | 历史改写：备份分支 → 方案先行 → rebase 拆分 / 改类型 / 重排 / 删除 → 时间恢复 → 重打 tag → 四重验证 → 确认后强推 | references/lessons.md |
+| session-summary | 会话总结与 skills 迭代：取证 → 总结 → 审视技能优化点（价值 / 成本 / 建议）→ 确认后实施，作为迭代本仓库技能的工具 | — |
 
 ## 目录结构
 

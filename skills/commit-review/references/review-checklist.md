@@ -211,6 +211,15 @@
   git log --oneline -20
   ```
 
+#### 发版提交专项核查（被审提交为 `chore(release): 发布 vX.Y.Z` 时）
+
+- **类型与标题**：是否为 `chore(release): 发布 vX.Y.Z`；其余类型（`docs` / `chore` / `feat` 等）承载版本号即不合规（发版内容只允许落在 `chore(release)` 提交）。
+- **改动范围**：是否只动 `CHANGELOG.md` 顶部新条目、`marketplace.json` 的 `version` 与 README / PLUGIN_README 的呈现层——**不得夹带功能改动**，也不得夹带 `marketplace.json` 的 `skills` 数组（新增 / 改名 / 删除技能的分发同步应在前置功能提交里完成）。
+- **位置**：是否位于该版本**最后一个功能提交之后**——其后不应再出现同版本的功能提交（发版即版本定案）。
+- **条目不可变**：是否只**新增自己版本的顶部条目**、未修改任何历史条目（含补记、修订说明——发版条目一经创建不得在后续提交改动，补充内容只能记入下一个版本的条目）。
+- **版本号对齐**：`CHANGELOG.md` 顶部版本、`marketplace.json` 的 `version`、注解 tag `vX.Y.Z` 三者一致。
+- **时间语义**：author / committer 时间是否合理——历史重写（rebase / filter-branch）后的提交时间应恢复原提交时间，不应是重写当天的当前时间（除非原提交本就如此）。
+
 ### 命中后怎么写进结论
 
 模板：

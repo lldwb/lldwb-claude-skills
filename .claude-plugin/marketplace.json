@@ -32,7 +32,9 @@
         "nas-disk-diagnostic",
         "git-clean-branches",
         "git-rollback",
-        "git-worktree"
+        "git-worktree",
+        "git-history-rewrite",
+        "session-summary"
       ],
       "commands": [],
       "agents": []
