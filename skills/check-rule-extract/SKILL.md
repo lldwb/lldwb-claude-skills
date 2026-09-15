@@ -23,7 +23,7 @@ description: 业务操作前置校验规则提取（编排调度）——以菜�
 - 自己编写校验规则片段并替子代理落盘；
 - 替代子代理执行其职责范围内的任何工作。
 
-**你可以做**：用 bash（Grep / wc / ls / python）解析范围、检查落盘目录、调用生成脚本；用 Read 读取已落盘的片段用于合并；用 bash + python（openpyxl，经 `scripts/build_check_xlsx.py`）将**最终合并工作簿（.xlsx）**写入 `--out` 指定位置（默认用户下载目录，目录不存在则创建）。
+**你可以做**：用 Grep / Glob 工具解析范围、定位文件（不用 bash 的 grep / ls 代替），用 bash（ls / wc / python）检查落盘目录、调用生成脚本；用 Read 读取已落盘的片段用于合并；用 bash + python（openpyxl，经 `scripts/build_check_xlsx.py`）将**最终合并工作簿（.xlsx）**写入 `--out` 指定位置（默认用户下载目录，目录不存在则创建）。
 
 ## 适用与边界
 
@@ -87,7 +87,7 @@ description: 业务操作前置校验规则提取（编排调度）——以菜�
 ### 第 3 步：菜单 → Controller 定位（有菜单体系时）
 
 1. 按范围参数匹配到目标菜单后，取菜单地址 → 去掉 `?` 查询串与末尾方法段（如 `/index`）→ 得到类级路径（如 `/xxx/yyyMain`）→ 与 Controller 类级 `@RequestMapping`（去掉 `${adminPath}` 之类前缀）精确匹配 → 定位目标 Controller。一个菜单对应一个 Controller；同路径前缀有多个候选时取**最长匹配**。
-2. 用 bash ls / Grep 校验目标 Controller 文件**真实存在**；`wc -l` 取行数备评估体量。
+2. 用 Glob / Grep 工具校验目标 Controller 文件**真实存在**（定位到 `file:line`）；bash `wc -l` 取行数备评估体量。
 3. **菜单层级（一级 / 二级 / 三级菜单名）由菜单数据源给出**，随子代理入参传入，不再由子代理从 URL 推测。
 
 ### 第 4 步：输出范围清单，等待确认

@@ -8,7 +8,7 @@
 
 - 技能正文一律是**通用模板**：项目名、业务表名、业务术语、IP、绝对路径一律用占位符（`<表名>`、`<模块>`、`<skill 目录>`…），调用时按项目实际填充。
 - 技能代码一律**参数化**，不硬编码任何项目专属值（脱敏强制要求见文末「提交规范」）。
-- 技能遵循 **Anthropic 官方 Agent Skills 开放格式**（`SKILL.md`，frontmatter 仅 `name` + `description`），可被其他支持该格式的工具（opencode、Codex 等）复用。改技能时保持此开放性：不新增私有 frontmatter 字段，正文不依赖仅 Claude Code 可用的机制；子代理调度（见「子代理调度约定」）与浏览器 MCP（`frontend-error-diagnose`）为 Claude Code 特有依赖，跨工具复用场景由使用方适配。
+- 技能遵循 **Anthropic 官方 Agent Skills 开放格式**（`SKILL.md`，frontmatter 用官方字段：`name` + `description` 必填，可另加 Claude Code 官方字段如 `disable-model-invocation` / `allowed-tools` / `argument-hint` / `model` 等），**面向 Claude Code 运行**：正文应充分运用 Claude Code 核心机制——Task 子代理调度（见「子代理调度约定」）、上下文管理（按段加载、长产物落盘后引用路径、Grep/Glob 定位代替全文扫描）、专用工具调用（文件检索用 Grep / Glob，读取用 Read，不用 bash 的 grep / cat 代替）与浏览器 MCP（`frontend-error-diagnose`）。开放格式保证可被其他支持该格式的工具（opencode、Codex 等）复用，跨工具复用时由使用方适配；**不因跨工具兼容而回避 Claude Code 机制**。frontmatter 只使用 Claude Code 官方字段，不新增私有字段。
 
 ## 常用命令
 
@@ -73,6 +73,8 @@ python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目�
 ### 子代理调度约定
 
 `module-batch`（多模块并行改造）、`check-rule-extract`（逐 Controller 追溯校验规则）、`i18n-transform`（国际化改造的扫描/改造/审查/验证流水线）等技能以 **Agent 工具 `subagent_type: general-purpose` + `run_in_background=true` + 轮询任务输出** 调度子代理；调度方只做编排、校验落盘、合并结果，**不替子代理做追溯/改造**。改这些技能时保持「调度与执行分离」与「改造与审查分离（审查/验证只读、修复后必须复审）」。**派发粒度为单元级 1:1**：一个单元（一个文件 / 一个模块 / 一个 Controller）一个子代理，**不把多个单元合并给同一子代理**；并发数只作**速率控制**（限流），不改变 1:1 的对应关系。（`doc-sync` 的文档复核子代理是**单次同步调用**——需拿到结论后再改文档，不在此列。）
+
+**适用范围**：子代理用于**可并行、需上下文隔离**的单元级任务（逐 Controller / 逐文件 / 逐模块）与独立只读审查（复核、对抗性审查、影响面检索）；大范围素材收集（如 `repo-init` 的仓库探索）同样优先派只读子代理分片收集，主代理只汇总写结论。单任务工作流（`bug-fix`、`commit-create`、`db-query` 等）由主代理全程执行，**不强制派子代理**——判断标准是该任务是否有可并行的独立单元、是否会让主代理上下文超限，而不是"每个技能都必须用"。技能正文引入子代理调度时按本约定写（`Agent` 工具、`subagent_type: general-purpose`、`run_in_background=true`、轮询任务输出），并明确子代理为全新上下文、prompt 须自包含。
 
 ## 已知坑
 
