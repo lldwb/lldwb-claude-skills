@@ -74,6 +74,8 @@ disable-model-invocation: true
 
 ## 注意事项
 
+- **任务跟踪按环境能力可选**：环境提供 `TodoWrite` / `Task*` 工具时用原生任务清单跟踪进度，否则退回对话内文本清单或落盘勾选（如 `tasks.md`）——形态与规则见 AGENTS.md「任务跟踪机制」小节，不硬性依赖任一形态。
+
 - **reset vs revert**：reset 改写历史、需强推且可能影响协作者（他人已拉取该分支时其本地历史会分叉）；revert 生成新提交、保留历史、可普通 push。**有协作者的分支优先 revert**。
 - **动分支指针前先确认 HEAD**：动非当前分支用 `git branch -f`；`git reset --hard` 只用于当前分支，否则会错误地移动当前分支指针。
 - **工作区先清干净**：reset 前若工作区有未提交改动，先提交或 stash——`--hard` 会连同工作区一起还原。
