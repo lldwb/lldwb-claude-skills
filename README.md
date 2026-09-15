@@ -1,6 +1,6 @@
 # lldwb-claude-skills
 
-从 lldwb 的项目实践中抽象出的 24 个通用工作流技能（Agent Skills），供其他项目、其他人复用。
+从 lldwb 的项目实践中抽象出的 26 个通用工作流技能（Agent Skills），供其他项目、其他人复用。
 每个技能是一个自包含目录，含 `SKILL.md`（frontmatter: `name` + `description`）及所需的脚本/参考文件/README。
 
 本仓库技能遵循 **Anthropic 官方 Agent Skills 开放格式**（`SKILL.md`，frontmatter 以 `name` + `description` 为准，可另加 Claude Code 官方字段），**面向 Claude Code 运行、充分运用其机制**：Task 子代理调度（`module-batch` / `opencode-batch` / `check-rule-extract` / `i18n-transform` / `refactor` / `doc-sync` 等）、上下文管理（按段加载、长产物落盘后引用路径）、专用工具调用（Grep / Glob / Read）与浏览器 MCP（`frontend-error-diagnose`）；`git-clean-branches` / `git-rollback`（含删除分支、改写历史等危险操作）另带官方字段 `disable-model-invocation: true`，只能显式调用、不参与自动触发。开放格式仍可被支持该格式的其他 agent 工具复用：opencode 原生兼容（发现路径含 `~/.claude/skills/`），Codex 亦支持但需置于 `.agents/skills/`（个人或项目级）——跨工具复用时按对方工具适配，不因兼容性回避 Claude Code 机制；安装脚本与 Plugin marketplace 仅服务于 Claude Code。
