@@ -87,7 +87,7 @@ python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目�
 
 ## 已知坑
 
-- 根目录 `config.json` 被 `.gitignore` 的 `**/config.json` 规则命中而**未入库**（README 目录结构中列出了它）：clone 后需自行创建。无参 `python install.py` 在缺配置时**直接报错**（不再把磁盘上所有技能兜底视作 `enabled=true` 全量安装）；`--list` 与显式指定技能名不受影响。
+- 根目录 `config.json` 被 `.gitignore` 的 `**/config.json` 规则命中而**未入库**（README 目录结构中列出了它）：clone 后需自行创建。无参 `python install.py` 在缺配置时**直接报错**（不再把磁盘上所有技能兜底视作 `enabled=true` 全量安装）；`--list` 与显式指定技能名不受影响。注意区分：**配置文件缺失**才报错；配置文件存在但**未列出某技能**时，安装器按默认启用（`enabled=true`）补全磁盘上实际存在的技能目录、不报错——想排除某技能须显式写 `enabled: false`，不能靠"不列出"。
 - `skills/*/.tasks/`、`__pycache__/`、`*.pyc` 是本地产物（已在 .gitignore 中），提交时勿 `git add`。
 - 创建 GitHub Release 需要带 **Contents: write** 的 token（`release.py` 读 `GITHUB_TOKEN` / `GH_TOKEN` 环境变量）。别拿 `GET /repos/{owner}/{repo}` 的 `permissions` 字段判断能不能写 —— 那反映的是**用户在该仓库的角色**、不是所持 fine-grained PAT 的实际授权，照它判断会在创建时吃 403 `Resource not accessible by personal access token`；手边只有推送凭据时，`git credential fill` 可取到能用的那份。
 
