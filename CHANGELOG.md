@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.3.2] - 2026-09-15
+
+修复插件分发与文档的技能数量不一致：`marketplace.json` 插件条目补必填 `source` 并修正 skills 数组路径；README / PLUGIN_README 技能数量声明从「24 个」修正为「26 个」（与 `skills/` 目录条目数对齐），`session-summary` 技能内两处同源数量同步修正，`AGENTS.md` 架构第 3 条固化「技能数量声明以 `skills/` 目录条目数为准、随技能表同步更新」约定；未新增技能、技能名与 `description` 不变。
+
+### Fixed
+
+- **`marketplace.json` 插件条目补必填 `source` 并修正 skills 路径**：插件条目标准字段补全，`skills` 数组路径修正为 `./skills/<技能名>`，与安装脚本分发路径一致
+- **文档技能数量声明 24 → 26**：README / PLUGIN_README 正文「24 个」修正为「26 个」（技能表实际 26 行、`skills/` 目录 26 个目录、marketplace `skills` 数组 26 条）；`session-summary` SKILL.md 的 frontmatter description 与「验证方式」两处「24 个技能」同步修正
+
+### Changed
+
+- **`AGENTS.md` 架构第 3 条补技能数量一致约定**：文档正文的技能数量声明必须以 `skills/` 目录条目数（即分发清单全量）为准，新增 / 删除技能时数字随技能表一并更新，不得停留在旧值
+
+### 说明
+
+- 正文为文档数量修正与表述统一（小修小补），不构成技能新增 / 删除 / 语义重写，按分级取**小版本**。
+- 技能数量与名称零改动；`config.json`（本地启用清单，不入库）本地补全 `git-history-rewrite` / `session-summary` 两项，与分发全量对齐。
+- `.claude-plugin/marketplace.json` 版本号 2.3.1 → 2.3.2
+
 ## [2.3.1] - 2026-09-15
 
 补任务跟踪机制的可选指引与技能自包含约定：`AGENTS.md` 新增「任务跟踪机制（环境能力可选）」小节并强化「技能目录自包含」为架构第 1 条（强制），26 个技能注意事项补一条「任务跟踪按环境能力可选」（**自包含**写法，安装到其他项目后不依赖仓库文档）；未新增技能、技能名与 `description` 不变。
