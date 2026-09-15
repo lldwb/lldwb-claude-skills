@@ -85,8 +85,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|
 | 构建 / 测试命令 | 读构建清单（`pom.xml` / `package.json` / `Makefile` …）；仓库里已有脚本就照抄脚本用法 |
 | 哪些文件真正入库 | `git ls-files`（本地存在 ≠ 已入库，被 `.gitignore` 命中的必需文件是常见坑） |
-| 某模块被谁共用 | `grep -rn "import <模块>\|require(<模块>)"` 全仓库搜引用，别只看一处 |
-| "唯一入口""只改一处"类断言 | 必须有 `grep` / `git` 佐证；佐证不足就弱化表述 |
+| 某模块被谁共用 | Grep 工具（pattern 匹配 import / require 该模块的语句，path 为源码根）全仓库搜引用，别只看一处 |
+| "唯一入口""只改一处"类断言 | 必须有 Grep / `git` 佐证；佐证不足就弱化表述 |
 | 文件是否会被忽略 | `git check-ignore -v <路径>` |
 | 提交信息风格 | `git log -n 10 --pretty=medium`（**不要用 `%s%n%b`**——那种格式看不出标题与正文之间的空行，抄进指引会让示例失真） |
 | 既有 AI 规则要点 | 读 `.cursor/rules/`、`.cursorrules`、`.github/copilot-instructions.md`，要点并入 |
