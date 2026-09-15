@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.2.4] - 2026-09-15
+
+技能正文转向**充分运用 Claude Code 机制**：把「正文不依赖仅 Claude Code 可用机制」的仓库基调反转为「面向 Claude Code 运行、充分运用其机制」，并修复 6 个技能对专用工具调用 / Task 子代理调度运用不足的实现；未新增技能、技能名与 `description` 不变。
+
+### 变更
+
+- **`AGENTS.md` 反转机制约束基调**：「正文不依赖仅 Claude Code 可用的机制」改为「面向 Claude Code 运行、充分运用其机制」——Task 子代理调度、上下文管理（按段加载、长产物落盘后引用路径）、专用工具调用（Grep / Glob / Read，不用 bash 的 grep / cat 代替）与浏览器 MCP 是技能应**主动运用**的机制，不因跨工具兼容而回避；frontmatter 允许 Claude Code 官方字段（`disable-model-invocation` / `allowed-tools` / `argument-hint` / `model` 等），不新增私有字段——`git-clean-branches` / `git-rollback` 已用的 `disable-model-invocation` 与旧「frontmatter 仅 name + description」约束的冲突随之消除；「子代理调度约定」补适用范围判据（可并行、需上下文隔离的单元级任务与独立只读审查用子代理；单任务工作流如 `bug-fix` / `commit-create` 不强制）
+- **`check-rule-extract` 改用专用工具**：正文「用 bash（Grep / wc / ls / python）解析范围」「用 bash ls / Grep 校验文件存在」改为「用 Grep / Glob 工具定位与校验、bash 仅用于 wc / ls / python」——修复工具调用机制运用不足
+- **`commit-review` / `log-diagnose` / `repo-init` 统一工具名**：正文与核查清单中的小写 `grep` / `glob` / `read`（歧义为 bash 命令）统一为 Grep / Glob / Read 工具；`commit-review` 影响面检索与 `project-explain` 素材收集补充「检索面大时派只读子代理分担、避免挤占上下文」提示
+- **`repo-init` 大仓库探索补子代理分片**：入库文件多时按模块 / 目录派**只读探索子代理**分片收集素材（一个分片一个子代理，回报「事实 + 出处（`file:line` / 命令 + 输出）」清单），主代理只汇总归纳写指引，避免探索挤占上下文；全仓清点与计数口径仍由主代理用 bash 完成
+- **`comment-supplement` 批量收集补只读子代理**：目标文件多时按文件 / 模块派只读子代理并行收集「缺失 / 不准确 / 过期」三类位置清单（一个单元一个子代理），主代理汇总去重后交用户确认；补全修正仍由主代理执行（注释质量敏感，不外包）
+- **`README.md` 同步基调**：技能定位从「非 Claude Code 私有格式、跨工具需适配」改为「面向 Claude Code 运行、充分运用其机制，开放格式仍可被其他工具复用、由使用方适配」
+
+### 说明
+
+- 本次为技能正文对 Claude Code 机制运用的缺陷修复：机制基调反转（`AGENTS.md`）+ 6 个技能对专用工具 / 子代理调度运用不足的修正，均为正文表述与机制提示增补，不构成技能新增 / 删除 / 语义重写，按分级取**小版本**。
+- 技能数量与名称零改动，两条分发路径（安装脚本启用清单、`.claude-plugin/marketplace.json` 的 `skills` 数组）无需改动。
+- `.claude-plugin/marketplace.json` 版本号 2.2.3 → 2.2.4
+
 ## [2.2.3] - 2026-09-15
 
 吸纳外部工具 zcf（Zero-Config Code Flow）中尚未评估的三块：`commit-create` 补提交前状态校验与提交信息约束、`repo-init` 补扫描覆盖与缺口汇报、安装脚本补备份与安装状态；未新增技能、技能名与 `description` 不变。
