@@ -119,6 +119,8 @@ git push --force origin --tags
 
 ## 注意事项
 
+- **任务跟踪按环境能力可选**：环境提供 `TodoWrite` / `Task*` 工具时用原生任务清单跟踪进度，否则退回对话内文本清单或落盘勾选（如 `tasks.md`）——形态与规则见 AGENTS.md「任务跟踪机制」小节，不硬性依赖任一形态。
+
 - **先取信息再 reset**：拆分提交时 `%B` 必须在 `git reset --soft` 之前落盘，否则取到父提交的信息（本次会话的真实教训）。
 - **reset --soft 后先移出再提交**：暂存区含该提交全部改动，先 `git restore --staged` 移出不属于本次提交的文件，否则被第一个 commit 带走。
 - **edit 标记可能不生效**：`GIT_SEQUENCE_EDITOR` 的 sed 按 hash 前缀匹配 todo 行，hash 缩写不匹配时会静默跳过——改写后核对每个目标是否真的被处理。
