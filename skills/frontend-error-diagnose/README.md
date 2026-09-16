@@ -12,7 +12,8 @@
 
 - 复现取证：浏览器 MCP 打开页面 → 触发报错 → 采集 console / 网络 / 调用栈 / 截图 / 环境版本（对照表见 `references/browser-evidence-checklist.md`）
 - 结论结构：现象 → 证据 → 根因 → 修复方案 → 影响范围与回归点，每条判断可指回证据（模板见 `references/conclusion-template.md`）
-- 无法复现时按三档降级（换环境 → 索要报错原文 → 只给可能性排序），不静默跳过
+- 无法复现时按三档降级（换环境 → 索要报错原文 / HAR → 只给可能性排序），不静默跳过
+- 浏览器侧改写请求头取证：接口直连正常却在浏览器里 403/401 时，按「对照实验 → 扩展 DNR 规则 → 扩展源码」定位改写源（见 `references/extension-header-forensics.md`）
 - 接口/后端异常交叉验证：接 `log-diagnose`（日志）、`db-query`（数据佐证，生产只读）；确需修复转 `bug-fix`
 - 默认只诊断不改代码：诊断环节不产生任何代码改动，产出为可审计的结论
 
@@ -20,6 +21,7 @@
 
 - `SKILL.md` — 技能指令（唯一入口）
 - `references/browser-evidence-checklist.md` — 浏览器取证清单（工具能力对照、必采证据、按报错类型取证要点、APM 上报定位、降级档位）
+- `references/extension-header-forensics.md` — 请求头被改写类报错取证（适用判据、curl 对照实验、扩展 DNR 规则与 storage 的磁盘取证、处置与验证、环境能力限制）
 - `references/conclusion-template.md` — 结论输出模板（逐段填写要求、未复现时的写法、常见不合格写法）
 
 ## 依赖

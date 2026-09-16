@@ -18,7 +18,7 @@
 | db-query | 数据库查询：生产只读（三重保障）、测试写需用户确认，安全铁律（禁 select *、单条语句、控制数据量） | scripts/（db-query / gen-fix-sql / run-sql-file / sync-table / db_common）、references/config.example.json、requirements.txt |
 | module-batch | 多模块并行改造：worktree 隔离 + 并行子代理 + 独立审查 + 合并回主分支，含子代理提示词、收尾报告与失败处置 | references/subagent-prompts.md、references/report-template.md、references/lessons.md |
 | check-rule-extract | 业务操作前置校验规则提取：以菜单（或 Controller 类名）为入口，协调调度子代理逐 Controller 追溯，合并输出 Excel 工作簿 | scripts/build_check_xlsx.py、references/extract-agent.md、references/output-and-rules.md、requirements.txt |
-| frontend-error-diagnose | 前端报错诊断：浏览器 MCP 复现取证（console / 网络 / 调用栈）→ 根因 → 可执行方案，只诊断不改代码 | references/browser-evidence-checklist.md、references/conclusion-template.md |
+| frontend-error-diagnose | 前端报错诊断：浏览器 MCP 复现取证（console / 网络 / 调用栈）→ 根因 → 可执行方案，只诊断不改代码 | references/browser-evidence-checklist.md、references/extension-header-forensics.md、references/conclusion-template.md |
 | unit-test | 单元测试：生成（覆盖分支与边界、可运行可通过）/ 修复失败（默认不自行执行，交用户验证） | references/test-design-checklist.md |
 | doc-sync | 文档与代码同步：由文档定位代码确认变更 → 更新 / 修正偏差，子代理复核一致性（事实源不限于代码；代码改造转 feature-dev） | references/verify-agent.md |
 | commit-create | 提交 git 改动（提交环节 SSOT）：单一职责拆分、显式 add、中文提交信息（标题/正文空行 + 提交后结构复核），不自动 push；可选 emoji 前缀 / 显式 type·scope / 仅 Git 轻量路径 / `--amend`（限未推送分支） | — |
