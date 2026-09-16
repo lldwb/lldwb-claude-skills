@@ -123,6 +123,20 @@ python <skill 目录>/scripts/sync-table.py --table <表名> --from prod --to te
 - **修复前后验证**: 修复 bug 前查异常数据快照，修复后重查确认（引用输出文件路径）
 - **结构确认**: 列名不确定时先查 information_schema.columns 再写查询，避免猜列名报错
 
+## GaussDB 兼容注意（实测）
+
+连接 GaussDB（PostgreSQL 兼容）时以下写法会踩坑，均已实测：
+
+- `COUNT(*) FILTER (WHERE ...)` 不支持 → 用 `SUM(CASE WHEN ...)`。
+- `::regnamespace` 类型不存在；按 schema 过滤用 `pg_namespace` 或数值 oid。
+- `getdistributekey('schema.tbl')` 参数需表名文本，传 oid 数字报 `relation does not exist`。
+  **分布表主键/唯一约束必须含分布键列**：`ADD PRIMARY KEY` 报 `Cannot create index whose
+  evaluation cannot be enforced to remote nodes` 时先查分布键（`getdistributekey`）比对，别误判为权限问题。
+- `ALTER TABLE ... RENAME TO <新名>` 目标**不能带 schema 前缀**（表保留在原 schema）。
+- 约束名在 **schema 内全局唯一**：不同表不能有同名约束，测试库已有约束名时验证新表会 `already exists`，用测试专用约束名。
+- Navicat 导出的表 DDL 常 `DISTRIBUTE BY HASH()` 空括号（**语法错误**）且 `DROP TABLE IF EXISTS` 无备份，需补分布键与备份留档再执行。
+- 库默认 collate=`C`、业务表多为 `utf8mb4_general_ci`：重建/建表必须显式带 `COLLATE "utf8mb4_general_ci"`，否则新表与关联表 join/比较 collation 不一致。
+
 ## 验证
 
 本技能不跑自动化测试，按**产出核验**执行：交付前逐项核对——
