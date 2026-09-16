@@ -75,6 +75,18 @@ python install.py --dry-run
 python install.py --list
 ```
 
+根目录 `config.json` 为技能启用清单（已被 gitignore、未入库，clone 后需自行创建；缺失时无参安装会报错）。最简示例：
+
+```json
+{
+  "skills": {
+    "<技能名>": { "enabled": true }
+  }
+}
+```
+
+未列出的技能按磁盘上实际存在的技能目录默认启用；排除某技能须显式写 `"enabled": false`，不能靠"不列出"。
+
 覆盖同名技能与卸载前，原目录会先备份到 `~/.claude/backup/lldwb-skills/<时间戳>/`，安装状态（版本 + 时间）记在同目录的 `state.json`；`--list` 可直接看到每个技能的已安装版本：
 
 ```bash
