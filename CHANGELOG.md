@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.3.3] - 2026-09-16
+
+补既有技能的取证能力与安装器便利：`frontend-error-diagnose` 新增「请求头被改写类报错」取证路径（`references/extension-header-forensics.md`），`bug-fix` 补环境侧缺陷处置分支与工具链故障取证清单，`db-query` 补 GaussDB 兼容注意节；安装器缺 `config.json` 时自动创建最小配置并修复 Windows 脚本失败提示乱码；`AGENTS.md` 已知坑补 install.py 补全行为区分，`.gitignore` 忽略本地诊断产物目录 `diagnosis/`；未新增技能、技能名与 `description` 不变。
+
+### Fixed
+
+- **Windows 安装脚本失败提示乱码修复**：`install.bat` / `uninstall.bat` 失败分支的 `pause` 换为 `python -X utf8` 输出中文提示，规避 GBK 控制台乱码
+
+### Added
+
+- **`frontend-error-diagnose` 补「请求头被改写类报错」取证路径**：新增 `references/extension-header-forensics.md`——适用判据（接口直连正常但浏览器稳定失败、失败 403/401 且请求头自相矛盾、失败成片含静态资源等）、curl 对照实验定性、扩展 DNR 规则的磁盘取证（`DNR Extension Rules` / LevelDB 关键字检索）、扩展源码辅助判据、处置与验证、环境能力限制；`browser-evidence-checklist.md` 增加「接口 403/401 但直连正常」行与对照实验提示，无浏览器 MCP 时以 HAR 导出作请求头证据
+- **`bug-fix` 补环境侧缺陷处置分支**：根因不在本项目代码（运行环境、第三方依赖、工具链层）时仍走四段式定位与验证，但改动落在环境侧、不产生 git 提交（不为"有东西可提交"而在本仓库造改动）；`references/root-cause-checklist.md` 新增第 6 节「环境 / 工具链故障取证」——隔离复现优先于溯源、复合报错拆到最内层、退出码语义（127）、上游包缺陷按 tarball 实判、受限网络下取依赖、环境侧验证口径
+- **安装器缺 `config.json` 时自动创建最小配置**：无参 `python install.py` 在缺配置时自动创建 `{"skills": {}}`（未列出的技能默认启用 = 全量安装），仅首次创建、已存在绝不覆盖；`--list` 与显式指定技能名不依赖配置
+- **`db-query` 补 GaussDB 兼容注意节**：SKILL.md 新增实测注意——`COUNT(*) FILTER` 不支持改用 `SUM(CASE WHEN)`、无 `::regnamespace` 类型、分布键与主键/唯一约束的关系、`RENAME TO` 目标不带 schema 前缀、约束名在 schema 内全局唯一、Navicat 导出 DDL 的 `DISTRIBUTE BY HASH()` 坑与 collate 显式指定
+
+### Changed
+
+- **`AGENTS.md` 已知坑补 install.py 补全行为区分**：明确「配置文件缺失」自动创建 vs「文件存在但未列出某技能」按默认启用补全的区别——想排除某技能须显式写 `enabled: false`，不能靠"不列出"
+- **`.gitignore` 忽略本地诊断产物目录 `diagnosis/`**：目录内可能含真实 IP / 端口 / 扩展 ID 等环境与请求头证据，不入库
+
+### 说明
+
+- 正文为既有技能取证能力补强、安装器小功能与缺陷修复、文档同步（小修小补 + 小功能补强），未新增 / 删除技能、技能流程与语义无变更，按分级取**小版本**。
+- 技能数量与名称零改动，两条分发路径（安装脚本启用清单、`.claude-plugin/marketplace.json` 的 `skills` 数组）无需改动。
+- `.claude-plugin/marketplace.json` 版本号 2.3.2 → 2.3.3
+
 ## [2.3.2] - 2026-09-15
 
 修复插件分发与文档的技能数量不一致：`marketplace.json` 插件条目补必填 `source` 并修正 skills 数组路径；README / PLUGIN_README 技能数量声明从「24 个」修正为「26 个」（与 `skills/` 目录条目数对齐），`session-summary` 技能内两处同源数量同步修正，`AGENTS.md` 架构第 3 条固化「技能数量声明以 `skills/` 目录条目数为准、随技能表同步更新」约定；未新增技能、技能名与 `description` 不变。
