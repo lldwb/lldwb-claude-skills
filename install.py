@@ -219,12 +219,16 @@ def main():
             if not os.path.isdir(safe_skill_dir(SKILLS_DIR, n)):
                 die("技能 '%s' 不存在于 %s" % (n, SKILLS_DIR))
     else:
-        # 无参安装必须以 config.json 的启用清单为准：缺配置时报错，
-        # 不兜底安装全部技能（避免 clone 后未建配置导致全量安装）
+        # 无参安装以 config.json 的启用清单为准：缺配置时自动创建最小配置
+        # （未列出的技能默认启用 = 全量安装），仅在首次创建、已存在绝不覆盖
         if not os.path.exists(CONFIG_PATH):
-            die("未找到 %s，无法确定启用清单。\n"
-                "请按 README 的目录结构创建 config.json，"
-                "或显式指定技能名: python install.py <技能名> [<技能名> ...]" % CONFIG_PATH)
+            try:
+                with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                    json.dump({"skills": {}}, f, ensure_ascii=False, indent=2)
+                    f.write("\n")
+                print("已自动创建最小配置: %s（未列出的技能默认启用，可按需编辑）" % CONFIG_PATH)
+            except OSError as e:
+                die("无法自动创建 %s（%s）" % (CONFIG_PATH, e))
         todo = [(n, s) for n, s in sorted(skills.items()) if s.get("enabled", True)]
 
     if not todo:
