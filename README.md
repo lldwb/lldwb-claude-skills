@@ -75,7 +75,7 @@ python install.py --dry-run
 python install.py --list
 ```
 
-根目录 `config.json` 为技能启用清单（已被 gitignore、未入库，clone 后需自行创建；缺失时无参安装会报错）。最简示例：
+根目录 `config.json` 为技能启用清单（已被 gitignore、未入库；缺失时无参安装会自动创建最小配置，仅首次创建、已存在绝不覆盖）。最简示例：
 
 ```json
 {
