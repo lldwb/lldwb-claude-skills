@@ -18,10 +18,16 @@
 创建的只是「呈现层」：正文取自 CHANGELOG、版本号取自 tag，四处事实不在此重新判定 ——
 tag 缺失与 CHANGELOG 缺段落都只报告不猜测（同「脚本只取数，判定归 agent」）。
 
+已发布的 Release 正文也可能与 CHANGELOG 脱节（历史条目改写、正文写入时出错等）——
+`--verify` 回读远端正文逐条比对，`--sync-bodies` 把不一致的按 CHANGELOG 写回
+（写回同样受 `--apply` 控制，且**只改正文**、不触碰 tag 与发布状态）。
+
 用法:
     python release.py                        # 只列出计划（不发写请求）
     python release.py --apply                # 真正创建（token 取 GITHUB_TOKEN / GH_TOKEN）
     python release.py --tag v2.2.0 --apply   # 只补指定版本
+    python release.py --verify               # 回读远端正文并与 CHANGELOG 比对（只读）
+    python release.py --sync-bodies --apply  # 把不一致的正文按 CHANGELOG 写回
 退出码: 0 = 无阻塞项（可能仍有待创建项）；1 = 有版本被阻塞或有请求失败
 """
 import sys
@@ -208,10 +214,86 @@ def remote_state(slug, token):
     return released, remote_tags
 
 
+def fetch_releases(slug, token):
+    """分页取回全部 Release；列表接口返回数组（与其余接口的对象形态不同），失败返回 None。"""
+    releases, page = [], 1
+    while True:
+        status, body = api("GET", "/repos/%s/releases?per_page=100&page=%d" % (slug, page), token)
+        if status != 200:
+            msg = "读取 Release 列表失败（HTTP %s）：%s" % (status, body.get("message"))
+            note(msg)
+            print("阻塞: %s" % msg)
+            return None
+        if not body:
+            break
+        releases.extend(body)
+        if len(body) < 100:
+            break
+        page += 1
+    return releases
+
+
+def run_bodies(args, slug, sections, targets):
+    """回读远端 Release 正文与 CHANGELOG 比对；`--sync-bodies --apply` 时把不一致的写回。
+
+    正文同源是「Release 只作呈现层」的前提——回读即验证这条前提是否成立。
+    只改正文（PATCH body），不动 tag、标题与发布状态。
+    """
+    token = args.token or os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if not token:
+        print("阻塞: 未提供 token（--token 或 GITHUB_TOKEN / GH_TOKEN 环境变量）—— 无法回读远端 Release")
+        return 1
+    releases = fetch_releases(slug, token)
+    if releases is None:
+        return 1
+    wanted = set(targets) if args.tag else None
+    print("Release 正文比对：%s（远端 Release %d 个，CHANGELOG 段落 %d 个）\n"
+          % (slug, len(releases), len(sections)))
+    stats = {"一致": 0, "待更新": 0, "已更新": 0, "失败": 0, "缺段落": 0, "跳过": 0}
+    for rel in sorted(releases, key=lambda r: r.get("tag_name", "")):
+        tag = rel.get("tag_name", "")
+        version = tag[1:] if tag.startswith("v") else tag
+        if wanted and version not in wanted:
+            stats["跳过"] += 1
+            continue
+        want = sections.get(version)
+        if want is None:
+            stats["缺段落"] += 1
+            print("  %-10s 阻塞     CHANGELOG 里没有 [%s] 段落 —— 不猜测正文" % (tag, version))
+            note("Release %s 在 CHANGELOG 里没有对应段落" % tag)
+            continue
+        have = rel.get("body") or ""
+        if _norm(have) == _norm(want):
+            stats["一致"] += 1
+            print("  %-10s 一致     %d 字" % (tag, len(_norm(want))))
+            continue
+        if not (args.sync_bodies and args.apply):
+            stats["待更新"] += 1
+            print("  %-10s 待更新   现 %d 字 → 新 %d 字（id=%s）%s"
+                  % (tag, len(_norm(have)), len(_norm(want)), rel.get("id"),
+                     "" if args.sync_bodies else " —— 加 --sync-bodies --apply 写回"))
+            continue
+        status, resp = api("PATCH", "/repos/%s/releases/%s" % (slug, rel.get("id")), token,
+                           {"body": want})
+        if status == 200:
+            stats["已更新"] += 1
+            print("  %-10s 已更新   %d 字" % (tag, len(_norm(want))))
+        else:
+            stats["失败"] += 1
+            note("Release %s 正文写回失败" % tag)
+            print("  %-10s 失败     HTTP %s：%s" % (tag, status, resp.get("message")))
+    print("\n结果: " + "，".join("%s %d" % (k, v) for k, v in stats.items() if v))
+    return 1 if (blocked or stats["失败"]) else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="按 tag 补齐 GitHub Release（正文取自 CHANGELOG.md）")
-    ap.add_argument("--apply", action="store_true", help="真正创建 Release（缺省只列出计划）")
+    ap.add_argument("--apply", action="store_true", help="真正创建 / 写回（缺省只列出计划）")
     ap.add_argument("--tag", nargs="*", metavar="vX.Y.Z", help="只处理指定版本（可多个）")
+    ap.add_argument("--verify", action="store_true",
+                    help="回读远端 Release 正文并与 CHANGELOG 比对（只读，不创建）")
+    ap.add_argument("--sync-bodies", action="store_true",
+                    help="比对后把不一致的正文写回（须配 --apply 才发请求；只改正文）")
     ap.add_argument("--repo", metavar="owner/repo", help="覆盖 origin 解析出的仓库")
     ap.add_argument("--token", help="GitHub token（缺省取 GITHUB_TOKEN / GH_TOKEN 环境变量）")
     args = ap.parse_args()
@@ -231,6 +313,10 @@ def main():
         for t in unknown:
             note("本地没有注解 tag v%s" % t)
         targets = [v for v in all_versions if v in wanted]
+
+    if args.verify or args.sync_bodies:
+        return run_bodies(args, slug, sections, targets)
+
     latest = all_versions[-1]
 
     print("补齐 Release：%s（本地注解 tag %d 个，最新 v%s）"
