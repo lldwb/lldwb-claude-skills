@@ -34,7 +34,7 @@
 | git-rollback | 分支回滚到历史版本：reset / revert，默认 dry-run + 备份分支 + 受保护分支额外确认（仅显式调用） | — |
 | git-worktree | worktree 管理：统一目录创建 / 列出 / 删除 / 清理，内容迁移与环境文件复制 | — |
 | git-history-rewrite | 历史改写：备份分支 → 方案先行 → rebase 拆分 / 改类型 / 重排 / 删除 → 时间恢复 → 重打 tag → 四重验证 → 确认后强推 | references/lessons.md |
-| session-summary | 会话总结与 skills 迭代：取证 → 总结 → 审视技能优化点（价值 / 成本 / 建议）→ 确认后实施，作为迭代本仓库技能的工具 | — |
+| session-summary | 会话总结与 skills 迭代：取证 → 总结 → 审视技能优化点（价值 / 成本 / 建议）→ 确认后实施；会话在别的项目仓库时，一并把实证教训回流进那个仓库的 `AGENTS.md` | — |
 | app-packaging | 打包与分发：产物形态决策（裸目录 / zip / 单文件可执行 / 安装包）→ 运行时依赖盘点 → 跨平台构建边界（什么必须对应平台 runner）→ CI matrix 构建与 Release 附件分发 → 版本注入与校验和，产物在干净环境实测 | references/（Node SEA / CI 分发）、assets/（workflow 模板、SEA 配置） |
 
 ## 目录结构

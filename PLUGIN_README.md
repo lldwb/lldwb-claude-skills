@@ -57,7 +57,7 @@
 | git-rollback | 分支回滚（reset / revert；默认 dry-run + 备份分支） |
 | git-worktree | worktree 管理（统一目录 + 内容迁移 + 环境文件复制） |
 | git-history-rewrite | 历史改写（备份分支 + 方案先行 + 时间恢复 + 四重验证 + 强推） |
-| session-summary | 会话总结与 skills 迭代（总结 + 优化点评估 + 实施） |
+| session-summary | 会话总结与 skills 迭代（总结 + 优化点评估 + 实施 + 目标仓库 `AGENTS.md` 回流） |
 | app-packaging | 打包与分发（形态决策 + 跨平台构建边界 + CI 构建与 Release 附件 + 校验和） |
 
 技能清单定义在 `.claude-plugin/marketplace.json`。
