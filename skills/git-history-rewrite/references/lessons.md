@@ -2,6 +2,11 @@
 
 > 从真实历史改写（拆分发版提交、恢复时间、修正顺序）中沉淀的踩坑归纳，改写前对照排查一遍。
 
+## 备份与基线类
+
+- **同名备份分支会让 `git branch` 直接失败**：`backup/<分支>-<日期>` 已被占用时报 `fatal: a branch named ... already exists`（同日第二次改写、或一天内改多个主题时常见）——换带主题/序号后缀的新名字（`backup/main-20260917-changelog-cn`）。**不要用 `git branch -f` 顶掉同名分支**：旧备份可能仍是回退基准（曾出现同名备份停在 30 个提交前的过期位置，若覆盖就丢了当次基线）。
+- **改写前先 `git fetch`**：`--force-with-lease` 依赖本地 remote-tracking，基线过旧会误判「远程没变」。
+
 ## 拆分提交类
 
 - **取 %B 的顺序**：`git log -1 --format='%B' HEAD` 必须在 `git reset --soft HEAD^` **之前**执行——reset 后 HEAD 已是父提交，取到的是父的信息，提交会带上错误信息（曾把 v1.1.1 发版信息误标到 feat 提交上）。
@@ -15,6 +20,14 @@
 - **rebase 停在 edit 点时工作区可能残留改动**：amend 前没 `git add` 时，补丁留在工作区、amend 提交的是暂存区——提交后 `git status` 核对无残留。
 - **重排一个提交 = 其后全部重放**：todo 中移动提交行后，其后的提交全部重写（committer 变重写当天），时间恢复的映射须覆盖被重放的全部提交，不只移动的那个。
 - **rebase 起点**：`git rebase -i <起点>` 的 todo 只含起点**之后**的提交——起点选错会漏掉起点之前的待处理提交（曾漏掉 base 之前的 v1.1.0 改类型）。
+
+## 批量替换类（filter-branch）
+
+- **tree-filter 的替换会因行尾形态静默失配**：`--tree-filter` 检出的文件行尾由 `core.autocrlf` 决定（`true` → CRLF），而仓库对象里通常是 LF；依赖行尾的替换（多行字面量、`^…$` 锚定）在 CRLF 上匹配不上，**脚本 exit 0、内容没换**——曾因此把整个改写重做一遍。改完必须回读校验：`git show <新提交>:<文件> | grep -c '<新内容>'`。
+- **优先 `--index-filter`**：直接改索引里的 blob（始终是仓库对象形态），不检出文件、绕开 `autocrlf`，只需改个别文件时更快也更稳。
+- **替换模式不锚行尾**：`sed 's/^### Added/### 新增/'` 不带 `$`，两种行尾下都成立。
+- **改写前 dry-run**：先用同一脚本在临时检出上跑一遍、比对替换条数（`grep -c`）符合方案，再上 filter-branch——替身脚本错了只会在改完后才暴露。
+- **时间与 tag 一并恢复**：filter-branch 逐提交保留 author / committer（无需额外恢复，与 rebase 不同）；tag 需删旧重打，且注解 tag 的 tagger 日期要按原值设置。
 
 ## 时间恢复类
 
