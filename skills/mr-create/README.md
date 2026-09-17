@@ -32,6 +32,7 @@ python <skill 目录>/scripts/prepare-mr.py --source <源分支> --target <目�
 
 - `SKILL.md` — 技能指令（唯一入口）
 - `scripts/prepare-mr.py` — 分支校验与素材取数脚本（只取数不判定，不创建合并请求）
+- `scripts/selftest.py` — `prepare-mr.py` 的自测（38 项用例，覆盖各失败分支与六种推送状态；**改过 prepare-mr.py 必须重跑**，其中 C36 顺带核对状态键与 SKILL.md 表格一致）
 
 ## 依赖
 
