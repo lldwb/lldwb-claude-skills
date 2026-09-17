@@ -114,7 +114,7 @@ python install.py --restore <技能名>   # 从最近一次备份恢复（目标
 - 脚本依赖按技能安装：`pip install -r skills/db-query/requirements.txt`、`pip install -r skills/check-rule-extract/requirements.txt`（版本已固定）；其余技能仅用标准库。
 - 版本号按改动幅度分级选取（大版本 = 整体重构等破坏性改造、中版本 = 技能大改、小版本 = 小修小改），并在 `CHANGELOG.md` 顶部条目、`.claude-plugin/marketplace.json` 的 `version` 与注解 tag `vX.Y.Z` 三处对齐，由 `check-version.py` 校验（只校验一致性、不定级）；升级前可据此判断影响面，细则见 `AGENTS.md`「架构」第 4 条。
 
-## License
+## 许可证
 
 GPL-3.0
 
