@@ -22,7 +22,7 @@
 | unit-test | 单元测试：生成（覆盖分支与边界、可运行可通过）/ 修复失败（默认不自行执行，交用户验证） | references/test-design-checklist.md |
 | doc-sync | 文档与代码同步：由文档定位代码确认变更 → 更新 / 修正偏差，子代理复核一致性（事实源不限于代码；代码改造转 feature-dev） | references/verify-agent.md |
 | commit-create | 提交 git 改动（提交环节 SSOT）：单一职责拆分、显式 add、中文提交信息（标题/正文空行 + 提交后结构复核），不自动 push；可选 emoji 前缀 / 显式 type·scope / 仅 Git 轻量路径 / `--amend`（限未推送分支） | — |
-| mr-create | 合并请求（MR/PR）生成：分支校验（防空 MR）→ 四段式描述自动生成 → 确认后经 gh/glab 创建，无 CLI 时输出描述与手工创建链接 | scripts/prepare-mr.py |
+| mr-create | 合并请求（MR/PR）生成：分支校验（防空 MR）→ 四段式描述自动生成 → 确认后经 gh/glab 创建，无 CLI 时输出描述与手工创建链接 | scripts/（prepare-mr / selftest） |
 | comment-supplement | 注释补齐与修正：补全缺失 + 修正失效描述，仅注释层面，不确定项交用户确认（与代码改动并存时用 bug-fix） | references/comment-checklist.md |
 | project-explain | 项目讲解：结合项目真实代码逐项讲清概念（引用真实位置），结尾说明项目定位 | references/explain-outline.md |
 | repo-init | 仓库指引初始化（`/init` 的等价实现）：正文写入 AGENTS.md（唯一权威源、与既有内容合并），CLAUDE.md 仅作指向；先核实再断言，异常只记录上交 | references/output-templates.md |
@@ -33,8 +33,8 @@
 | git-clean-branches | 分支清理：已合并 / 过期分支，默认 dry-run、保护分支清单、远程删除单独确认（仅显式调用） | — |
 | git-rollback | 分支回滚到历史版本：reset / revert，默认 dry-run + 备份分支 + 受保护分支额外确认（仅显式调用） | — |
 | git-worktree | worktree 管理：统一目录创建 / 列出 / 删除 / 清理，内容迁移与环境文件复制 | — |
-| git-history-rewrite | 历史改写：备份分支 → 方案先行 → rebase 拆分 / 改类型 / 重排 / 删除 → 时间恢复 → 重打 tag → 四重验证 → 确认后强推 | references/lessons.md |
-| session-summary | 会话总结与 skills 迭代：取证 → 总结 → 审视技能优化点（价值 / 成本 / 建议）→ 确认后实施；会话在别的项目仓库时，一并把实证教训回流进那个仓库的 `AGENTS.md` | — |
+| git-history-rewrite | 历史改写：备份分支 → 方案先行 → rebase 拆分 / 改类型 / 重排 / 删除 → 时间恢复 → 重打 tag → 四重验证 → 确认后强推 | references/（lessons.md、index-filter.sh 模板） |
+| session-summary | 会话总结与 skills 迭代：取证 → 总结 → 审视技能优化点（价值 / 成本 / 建议）→ 确认后实施；会话在别的项目仓库时，一并把实证教训回流进那个仓库的 `AGENTS.md` | scripts/extract-session.py |
 | app-packaging | 打包与分发：产物形态决策（裸目录 / zip / 单文件可执行 / 安装包）→ 运行时依赖盘点 → 跨平台构建边界（什么必须对应平台 runner）→ CI matrix 构建与 Release 附件分发 → 版本注入与校验和，产物在干净环境实测 | references/（Node SEA / CI 分发）、assets/（workflow 模板、SEA 配置） |
 
 ## 目录结构
@@ -54,6 +54,8 @@ lldwb-claude-skills/
 ├── uninstall.py / uninstall.sh / uninstall.bat  # 卸载
 ├── check-version.py          # 发版校验：版本号三处对齐与 tag 可达（配合 .githooks/pre-push）
 ├── release.py                # 按 tag 补齐 GitHub Release（正文取自 CHANGELOG.md 对应段落）
+├── create-gitee-release.py   # 按 tag 补齐 gitee 镜像发行版（gitee API v5 私人令牌）
+├── check-skills.py           # 技能仓库自检（骨架与段位 / 分发清单 / 脱敏 / 数量声明）
 ├── .githooks/pre-push        # 推送前自动校验（启用：git config core.hooksPath .githooks）
 ├── PLUGIN_README.md          # 插件使用说明
 ├── CHANGELOG.md

@@ -35,8 +35,22 @@ python check-version.py           # 本地三项：版本号三处一致 / 注�
 python check-version.py --remote  # 追加远程：tag 已推送且指向的提交已在远程 main 上（需能访问 origin）
 python release.py                 # 列出各 tag 的 Release 状态（正文取自 CHANGELOG.md，不发写请求）
 python release.py --apply         # 补建缺失的 Release（须先推送 tag；token 取 GITHUB_TOKEN / GH_TOKEN；已存在的跳过）
+python release.py --verify        # 回读远端 Release 正文并与 CHANGELOG 比对（只读）
+python release.py --sync-bodies --apply   # 把正文与 CHANGELOG 不一致的 Release 写回（只改正文，不动 tag 与发布状态）
+python create-gitee-release.py    # gitee 镜像的发行版：列出计划（令牌取 GITEE_TOKEN 或 .tasks/gitee-token.txt）
+python create-gitee-release.py --apply    # 补齐 gitee 缺失的发行版（须先把 tag 推到 gitee；已存在的跳过）
+python create-gitee-release.py --verify   # 回读 gitee 发行版正文并与 CHANGELOG 比对（只读）
 git config core.hooksPath .githooks   # 启用 pre-push 钩子（每 clone 一次），推送前自动跑本地校验
 ```
+
+仓库自检（改动技能、发版前后各跑一次；只取数、判定归 agent）：
+
+```bash
+python check-skills.py            # 技能清单与数量声明 / SKILL.md 骨架与 README 段位 / 疑似技能名拼错 / 脱敏扫描 / 旧技能名残留 / 分发清单同步
+python check-skills.py --terms <文件>     # 指定业务敏感词表（缺省 sensitive-terms.txt）
+```
+
+业务敏感词表放仓库根 `sensitive-terms.txt`（**不入库**——把敏感词本身提交进通用技能仓库等于换个地方泄露；每行一个词、`re:` 前缀按正则、`#` 注释）；缺该文件时跳过业务词扫描并在结果里注明，通用模式（绝对路径 / IP / 凭据赋值 / 本机 owner 名）始终扫描。
 
 技能脚本（`<skill 目录>` = 仓库内 `skills/<技能名>/`，安装后为 `~/.claude/skills/<技能名>/`）：
 
@@ -47,6 +61,8 @@ python skills/log-diagnose/scripts/log-diagnose.py --list-envs            # Kiba
 python skills/log-diagnose/scripts/log-diagnose.py <trace_id> 30d --env prod
 python skills/commit-review/scripts/check-commit.py <修订号>              # 提交取数落盘（不做判定）
 python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目录> --out <xlsx> --source "<本册来源>"
+python skills/mr-create/scripts/selftest.py                               # mr-create 自测：38 项用例（改过 prepare-mr.py 必跑）
+python skills/session-summary/scripts/extract-session.py <会话id> --user   # 会话记录抽取（十几 MB，别整份读 transcript）
 ```
 
 三方依赖按技能独立安装：`pip install -r skills/db-query/requirements.txt`（db-query）、`pip install -r skills/check-rule-extract/requirements.txt`（check-rule-extract，版本已固定）；其余仅用标准库。
@@ -60,6 +76,16 @@ python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目�
 3. **两条分发路径**（新增 / 改名 / 删除技能必须同步）：① 安装脚本按根目录 `config.json` 的启用清单复制；② 插件模式读 `.claude-plugin/marketplace.json` 的 `plugins[].skills` 数组。此外还要同步 `README.md`、`PLUGIN_README.md` 的技能表与 `CHANGELOG.md`。文档正文中的**技能数量声明**（如「27 个技能」）必须与实际技能数一致——以 `skills/` 目录条目数（即分发清单全量）为准，新增 / 删除技能时数字随技能表一并更新，不得停留在旧值。
 4. **脚本只取数，判定归 agent**。`scripts/` 下所有脚本的共同设计：机械地拉取 / 解析 / 转换 / 落盘，**不替 agent 下结论**（是否 BUG、提交是否有问题，由 agent 推理）。扩展脚本时不要越界写判定逻辑。
 5. **版本号分级选取，三处对齐，发版打 tag，tag 与 main 一并推送**。版本号按改动幅度选取，沿用既有版本的实际分级：**大版本 `vX`** = 整体重构（结构性 / 破坏性改造，如技能改名）、**中版本 `vX.Y`** = 技能大改（新增 / 删除技能，或既有技能的流程与语义变更）、**小版本 `vX.Y.Z`** = 小修小改（表述统一、文档同步、小修小补与缺陷修复）。选定的版本号须在以下三处一致：`CHANGELOG.md` **顶部最新条目**的 `## [x.y.z]` 标题（记录改了什么；校验只认顶部一条，历史条目同为该形式但不参与对齐）、`.claude-plugin/marketplace.json` 的 `version`（插件分发读取）、git 注解 tag `vX.Y.Z`（把版本钉到具体提交，可用 `git tag --contains <sha>` 反查某提交属于哪个版本）。CHANGELOG 新条目末须列出 `.claude-plugin/marketplace.json` 的版本号变更行（A → B）；条目内部的小节标题**用中文**（`### 新增` / `### 变更` / `### 修复` / `### 说明`，不用 `Added` / `Changed` / `Fixed`），正文一律中文表述。历史条目不改写（记录当时事实）。发版顺序：**版本号改动只在发版提交中落**——功能提交（`feat`/`fix`/`refactor`/`docs` 等）**不得**夹带 `CHANGELOG.md` 顶部新条目与 `marketplace.json` 的 `version`（这两处只在发版提交里改）；版本内容**独立成一个提交**（`chore(release): 发布 vX.Y.Z`，只允许动 `CHANGELOG.md` / `marketplace.json` / README 与 PLUGIN_README 的呈现层同步），tag 打在它上面，让「这一版到此为止、版本号定案」在历史上有一个干净锚点。**发版提交位置与条目定稿**：发版提交必须位于**该版本最后一个功能提交之后**（版本功能全部合入后才发版，tag 指向的提交代表版本完整内容）；发版条目在发版提交中**一次写全**（覆盖该版本全部改动），**一经创建不得在后续提交中修改**（含补记、修订说明——发版后发现的补充只能记入下一个版本的条目，历史条目不改写）。**历史重写保留原时间**：rebase / filter-branch 等重写历史时，重建提交的 author / committer 时间必须恢复原提交时间（拆分一个提交产生的多个新提交沿用原提交时间），不得变成重写当天的当前时间。改前两处 → 提交 → 对该提交打 `git tag -a vX.Y.Z -m "<说明>"` → tag 与 `main` 一并推送（`git push origin main --follow-tags`，只带注解 tag、与上面的 `-a` 配套；本仓库另配 `gitee` 镜像远端，**两个远端都要推**：`git push gitee main --follow-tags`，只推 `origin` 会让镜像静默落后，见「已知坑」）→ `python release.py --apply` 补 Release（仅覆盖 GitHub；gitee 的发行版需另行创建）。**tag 推送与 Release 创建是同一个发版动作的两半，须配套完成、一次做完**：只推 tag 不建 Release 时首页 Releases 区块与 Watchers 通知都收不到该版本，只建 Release 不推 tag 时远端没有对应 ref（`/tree/<tag>` 是 404）——任一中间态都算发版未完成；两步之间不插入其他改动，避免 Release 正文（取自 CHANGELOG.md）与 tag 指向的提交错位。一致性由 `check-version.py` 校验——只核对三处是否一致与 tag 是否可达、**不定级**（该升哪一位由人按上述规则判断）；启用 `core.hooksPath` 后 pre-push 自动拦截，`--remote` 追加远程核对（见「常用命令」）。**不留只存在于本地的 tag**：远端缺该 tag 时 `/tree/<tag>` 是 404，引用此版本的文档与链接全部失效；tag 还须指向已在远程 `main` 上的提交，避免「tag 打得开、`main` 上却看不到」的错位。**不需要 release 附件或 CI 流程，Release 只作呈现层**——正文由 `release.py` 从 CHANGELOG.md 对应段落生成，让首页 Releases 区块直接显示最新版变更、Watchers 收到 release 通知；内容事实仍是 CHANGELOG 与 tag，不在此重复定义（tag 未推送或缺 token 时只报告不动作）；回填历史 tag 只是补 ref，不改写历史。**规则的移植性**：本条中「版本分级、三处对齐、发版提交独立且位于版本最后、条目一次写全且不可变、历史重写保留原时间、注解 tag 与 `main` 一并推送、Release 只作呈现层」是**跨仓库通用的发版规则**（已按其结构移植到其他仓库，对方用 `package.json` 作版本文件、用 CI 从 CHANGELOG 生成 Release 正文）；`marketplace.json`、`release.py` / `check-version.py`、`gitee` 镜像远端与 pre-push 钩子属**本仓库特有**——移植时按对方的版本文件、发布脚本与远端配置换算对应物，通用规则照搬不改。
+
+### 技能骨架与写法基准（新增 / 改造技能时照此）
+
+1. **SKILL.md 七节基准**：`角色` / `适用与边界` / `要求` / `执行步骤` / `验证` / `任务目标` / `注意事项`，末尾 `## 输入`；产生提交的技能另有 `## git 提交规则`。顺序固定、标题用基准词（可带后缀说明），改造时**基准节一个不缺**；工具型技能可在基准之外增列小节。分工：`要求` 写纪律与判据，`执行步骤` 写流程，`验证` 给命令 + 判定口径，`注意事项` 写易错点。
+2. **frontmatter 只用官方字段**：`name` + `description` 必填（`name` 必须等于目录名、改名时同步目录），其余限 Claude Code 官方字段（`disable-model-invocation` / `allowed-tools` / `argument-hint` / `model` / `license` / `version`），不新增私有字段。`description` 写「做什么 + 何时用（用户原话语境）+ 边界（该转哪个技能）」。
+3. **README 四段基准**：`使用` / `能力` / `文件` / `依赖`（可在四段之外补充）。`使用` 给触发语与典型命令，`能力` 逐条列能力与边界，`文件` 说明目录内每个文件（含脚本与 references），`依赖` 列运行时、可选工具与「缺失时的降级行为」。
+4. **references 拆分判据**：只有**可照抄的长模板 / 长清单 / 知识库**（速查表、坑位清单、模板脚本、配置样例）才拆进 `references/`；执行指令、边界与判据留在 SKILL.md——拆多了等于把正文藏起来，agent 不会主动读。既有 references 文件名不改（正文与文档都在引用）；模板脚本（如 `git-history-rewrite/references/index-filter.sh`）同样放 `references/`。
+5. **写法文风**：全中文；条目要点加粗、命令给完整可执行形式；占位符用尖括号（`<技能名>`、`<分支>`、`<表名>`）；写「做什么 / 为什么」，不复述官方文档与工具帮助。
+
+改完技能后跑 `python check-skills.py` 核对本节的机械项（骨架、README 段位、数量声明、分发清单）。
 
 ### 跨技能共用约定（改脚本时别破坏）
 
@@ -90,7 +116,7 @@ python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目�
 - 根目录 `config.json` 被 `.gitignore` 的 `**/config.json` 规则命中而**未入库**（README 目录结构中列出了它）：clone 后无需自行创建——无参 `python install.py` 在缺配置时会**自动创建**最小配置（`{"skills": {}}`，未列出的技能默认启用 = 全量安装），仅首次创建、已存在绝不覆盖；`--list` 与显式指定技能名不依赖配置。注意区分：**配置文件缺失**会自动创建；配置文件存在但**未列出某技能**时，安装器按默认启用（`enabled=true`）补全磁盘上实际存在的技能目录——想排除某技能须显式写 `enabled: false`，不能靠"不列出"。
 - `skills/*/.tasks/`、`__pycache__/`、`*.pyc` 是本地产物（已在 .gitignore 中），提交时勿 `git add`。
 - 创建 GitHub Release 需要带 **Contents: write** 的 token（`release.py` 读 `GITHUB_TOKEN` / `GH_TOKEN` 环境变量）。别拿 `GET /repos/{owner}/{repo}` 的 `permissions` 字段判断能不能写 —— 那反映的是**用户在该仓库的角色**、不是所持 fine-grained PAT 的实际授权，照它判断会在创建时吃 403 `Resource not accessible by personal access token`；手边只有推送凭据时，`git credential fill` 可取到能用的那份。
-- **`gitee` 镜像远端容易漏推**：`origin`（GitHub）是本文档发版流程里写明的那个远端，但本机另配了 `gitee` 镜像、且本地 `main` 的 upstream 指向它——只推 `origin` 时镜像会静默落后（曾出现 gitee 上连一个 tag 都没有、版本页长期为空）。发版时**两个远端都推**；`gitee` 走直连（需要代理的是 GitHub）。另注意 `release.py` 只对接 GitHub API：`git credential fill` 取到的 gitee 凭据是**账号密码**（用于 git push），gitee API v5 只认**私人令牌**，故 gitee 发行版须用令牌另行创建（`POST /api/v5/repos/{owner}/{repo}/releases`，`access_token` 传令牌），不用推送凭据去试。
+- **`gitee` 镜像远端容易漏推**：`origin`（GitHub）是本文档发版流程里写明的那个远端，但本机另配了 `gitee` 镜像、且本地 `main` 的 upstream 指向它——只推 `origin` 时镜像会静默落后（曾出现 gitee 上连一个 tag 都没有、版本页长期为空）。发版时**两个远端都推**；`gitee` 走直连（需要代理的是 GitHub）。另注意 `release.py` 只对接 GitHub API：`git credential fill` 取到的 gitee 凭据是**账号密码**（用于 git push），gitee API v5 只认**私人令牌**，故 gitee 发行版须用令牌另行创建（`POST /api/v5/repos/{owner}/{repo}/releases`，`access_token` 传令牌），不用推送凭据去试——仓库根 `create-gitee-release.py` 已封装该流程（令牌取 `GITEE_TOKEN` 或 `.tasks/gitee-token.txt`），`--verify` 可回读远端正文与 CHANGELOG 比对。
 
 ## 提交规范
 
