@@ -2,6 +2,9 @@
 **/log-diagnose.config.json
 **/config.json
 
+# 业务敏感词表（check-skills.py 扫描用；词表本身不入库，格式见脚本说明）
+sensitive-terms.txt
+
 # 工作产物
 .tasks/
 __pycache__/
