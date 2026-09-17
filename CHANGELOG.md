@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.4.2] - 2026-09-17
+
+把 `.tasks/` 里**有长期复用价值**的过程产物固化进仓库：新增 2 个仓库级工具（技能仓库自检、gitee 镜像发行版补齐）、1 个技能脚本（会话记录抽取）、1 组技能自测（`mr-create` 的 38 项用例）与 1 个历史改写模板，同时给 `release.py` 补上 Release 正文的回读与写回通道，并把过程中的规则沉淀进文档（批量替换教训、技能骨架与写法基准）。
+
+### 新增
+
+- **`check-skills.py`（技能仓库自检，仓库根）**：把可机械核对的部分一次跑完——① 技能清单与数量声明（磁盘技能数 vs marketplace 数组与正文里的「N 个技能」）② SKILL.md 骨架（七节基准）与 README 段位（四段）③ 技能名疑似拼错（提示层，不计入结论）④ 脱敏扫描 ⑤ 旧技能名残留 ⑥ 分发清单同步；只取数不判定，退出码 0/1
+- **`create-gitee-release.py`（仓库根）**：按 tag 补齐 gitee 镜像发行版——owner/repo 从 gitee 远端解析，正文取 CHANGELOG 对应段落并用 `release.entry_mismatch` 校验与 tag 提交处一致（不一致即阻塞、不猜测正文），令牌取 `--token` / `GITEE_TOKEN` / `.tasks/gitee-token.txt`；默认只列计划、`--apply` 才创建，已发布的不修改，`--verify` 回读远端正文比对
+- **`skills/session-summary/scripts/extract-session.py`**：会话记录抽取（四种模式：用户消息全文 / 尾部 N 条 assistant 文本 / 逐条时间线 / 紧凑全文转录），按项目路径转义规则定位 `~/.claude/projects/`，给会话 id 时可用 `--project` 指定所属项目，默认落盘 `.tasks/session-extract/`——填补技能「要求落盘抽取却没给工具」的缺口
+- **`skills/mr-create/scripts/selftest.py`**：`prepare-mr.py` 自测 38 项（失败分支、六种推送状态、平台识别、模板探测、落盘与渲染），用例各自在临时目录建独立仓库；C36 顺带核对脚本状态键与 SKILL.md「推送源分支」表一致，跨盘符用例无第二个盘符时记 SKIP
+- **`skills/git-history-rewrite/references/index-filter.sh`**：`filter-branch --index-filter` 批量替换脚本模板（改目标文件 / 命中模式 / sed 规则三处即可用，写明为何用 index-filter 而非 tree-filter）
+
+### 变更
+
+- **`release.py` 支持正文回读与写回**：`--verify` 分页回读全部 Release 并与 CHANGELOG 逐条比对（只读），`--sync-bodies --apply` 把不一致的正文写回（只改正文，不动 tag、标题与发布状态，无 `--apply` 时只列出）；无 token 与列表读取失败改为打印阻塞行
+- **`AGENTS.md` 新增「技能骨架与写法基准」小节**：SKILL.md 七节基准、frontmatter 官方字段、README 四段基准、references 拆分判据与写法文风——`check-skills.py` 按此机械核对
+- **脱敏扫描的业务词表外置**：`check-skills.py` 的通用模式（绝对路径 / IP / 凭据赋值 / owner 名）内置，业务专属词表放仓库根 `sensitive-terms.txt`（每行一个词、`re:` 前缀按正则；**词表本身不入库**——把敏感词提交进通用技能仓库等于换个地方泄露）
+- **`git-history-rewrite` 补两条批量替换教训**：替换脚本按字节替换、不解码（替换片段不含换行时天然绕开行尾差异，纯文本替换别用正则）；多分支全历史批量替换用 `--tree-filter` + 独立幂等脚本
+- **`app-packaging` / `git-history-rewrite` / `session-summary` 的 README 段位对齐基准**：补「能力」段、「用法」改「使用」、「文件与依赖」拆为「文件」「依赖」
+- **`AGENTS.md` 常用命令与 `README.md` 目录结构同步**：登记三个新工具入口与两个技能脚本，技能表补三个技能的附属文件
+
+### 说明
+
+- 本次为**工具与文档的固化**（新增 3 个脚本、1 个模板、1 组自测，无技能增删、无技能流程语义变更），按分级取**小版本**。
+- 技能数量仍 27、技能名与分发路径不变；`config.json`（本地启用清单，不入库）无需改动。
+- `.claude-plugin/marketplace.json` 版本号 2.4.1 → 2.4.2
+
 ## [2.4.1] - 2026-09-17
 
 `session-summary` 技能补「**目标项目的教训回流**」：被总结的会话操作的是**别的项目仓库**时，把该仓库本次实证过的教训回流进**它自己的** `AGENTS.md`，而不是只留在会话记录或本仓库技能里——教训的落点由「谁该记住它」决定，技能该记的进本仓库、项目该记的进那个项目；同轮同步三处分发文档的技能简介。
