@@ -2,14 +2,33 @@
 
 会话总结与 skills 迭代：把一次会话收尾为「做了什么 → 发现的问题与教训 → 当前 skills 优化点评估 → 实施」，作为迭代本仓库技能的工具。会话操作的是别的项目仓库时，还包含把该仓库实证过的教训回流进**它自己的** `AGENTS.md`。
 
-## 用法
+## 使用
 
 当用户要求"总结这次会话""看看 skills 有没有可优化的地方""把这次的经验沉淀进技能"时触发。
 
-## 文件与依赖
+```bash
+# 会话记录先落盘抽取再读（单文件可达十几 MB，别整份读 transcript）
+python <skill 目录>/scripts/extract-session.py <会话id> [--project <项目路径>] [--user|--assistant N|--timeline|--transcript]
+```
+
+给会话文件路径亦可；产出默认落盘 `<当前目录>/.tasks/session-extract/`，`--stdout` 直接打印。
+
+## 能力
+
+- 会话取证：四种抽取模式——用户消息全文（总结的取证主体）、尾部 N 条 assistant 文本消息、逐条时间线（含工具调用摘要）、紧凑全文转录；按 Claude Code 的项目目录转义规则（非字母数字字符转 `-`）定位 `~/.claude/projects/<转义路径>/<会话 id>.jsonl`
+- 总结三段：做了什么、发现的问题与教训、skills 优化点评估
+- 教训回流：会话操作的是**别的项目仓库**时，把该仓库实证过的教训写进那个仓库的 `AGENTS.md`（按那个仓库的规范提交）
+- 实施阶段按改动性质转 `feature-dev` / `bug-fix` / `refactor`，不自己硬走实现流程
+
+## 文件
 
 | 文件 | 说明 |
 |------|------|
-| `SKILL.md` | 执行指令（取证 → 总结 → 审视 skills → 目标项目 `AGENTS.md` 回流 → 优化点清单 → 确认后实施） |
+| `SKILL.md` | 技能指令（取证 → 总结 → 审视 skills → 目标项目 `AGENTS.md` 回流 → 优化点清单 → 确认后实施） |
+| `scripts/extract-session.py` | 会话记录抽取（只取数不判定；四模式；默认落盘 `.tasks/session-extract/`） |
 
-无脚本依赖；实施阶段按改动性质转 `feature-dev` / `bug-fix` / `refactor`；回流与发版各按其对象的规范——目标仓库 `AGENTS.md` 按那个仓库的提交规范，本仓库发版走仓库既有规则。
+## 依赖
+
+- Python 3（运行 `scripts/extract-session.py`，仅用标准库）
+- Claude Code 的会话记录文件（`~/.claude/projects/<项目路径转义>/<会话 id>.jsonl`）
+- 实施阶段按改动性质转 `feature-dev` / `bug-fix` / `refactor`；回流与发版各按其对象的规范——目标仓库 `AGENTS.md` 按那个仓库的提交规范，本仓库发版走仓库既有规则
