@@ -10,6 +10,11 @@
 只创建缺失的 Release，**不修改已存在的**；不推 tag、不改 CHANGELOG、不发版。
 默认只读（列出将创建 / 跳过的版本），`--apply` 才真正调用 GitHub API。
 
+创建前校验**条目一致性**：Release 正文取自**工作区**的 CHANGELOG.md，而发布出去的正文
+应当等于 tag 所指提交处的条目。两者不一致（版本条目改了没提交、或工作区停在别的提交）
+时正文会带上未发布的草稿内容 —— 这类版本标为「阻塞」、不猜测正文（曾出现正文含两条
+从未进入任何提交的条目行）。校验只比对**该版本那一段**，回填历史 tag 不受影响。
+
 创建的只是「呈现层」：正文取自 CHANGELOG、版本号取自 tag，四处事实不在此重新判定 ——
 tag 缺失与 CHANGELOG 缺段落都只报告不猜测（同「脚本只取数，判定归 agent」）。
 
@@ -90,6 +95,47 @@ def changelog_sections():
         end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
         sections[mark.group(1)] = text[mark.end():end].strip()
     return sections
+
+
+def _norm(text):
+    """比对用归一：统一行尾、去首尾空白（工作区文件可能是 CRLF，仓库对象是 LF）。"""
+    return (text or "").replace("\r\n", "\n").strip()
+
+
+def entry_at_tag(tag, version):
+    """取 tag 提交处的 CHANGELOG.md 里该版本条目；返回 (条目文本, 错误信息)。"""
+    rc, text, err = git("show", "%s:CHANGELOG.md" % tag)
+    if rc != 0:
+        return None, "读取 %s 提交处的 CHANGELOG.md 失败：%s" % (tag, err or "未知错误")
+    marks = list(SECTION_RE.finditer(text))
+    for i, mark in enumerate(marks):
+        if "v%s" % mark.group(1) != tag:
+            continue
+        end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
+        return text[mark.end():end], None
+    return None, "%s 提交处的 CHANGELOG.md 没有 [%s] 段落" % (tag, version)
+
+
+def first_diff_line(old, new):
+    """首个不同行的摘要，供提示用（只报告，不判定）。"""
+    a, b = _norm(old).split("\n"), _norm(new).split("\n")
+    for i in range(max(len(a), len(b))):
+        x = a[i] if i < len(a) else "<缺行>"
+        y = b[i] if i < len(b) else "<缺行>"
+        if x != y:
+            return "首个差异行 %d：tag 处 %s / 工作区 %s" % (i + 1, x[:36], y[:36])
+    return ""
+
+
+def entry_mismatch(tag, version, body):
+    """工作区条目与 tag 提交处条目不一致时返回差异摘要，一致返回空串。"""
+    tagged, err = entry_at_tag(tag, version)
+    if err:
+        return err
+    if _norm(tagged) == _norm(body):
+        return ""
+    return ("条目与 %s 提交处不一致（正文会带上未提交 / 非该版本的草稿内容）—— %s"
+            % (tag, first_diff_line(tagged, body)))
 
 
 def local_versions():
@@ -217,6 +263,10 @@ def main():
         elif released is not None and tag in released:
             state = "已存在"
             detail = "跳过，不修改已发布的 Release"
+        elif (mismatch := entry_mismatch(tag, version, body)):
+            state = "阻塞"
+            detail = mismatch
+            note("v%s 的 CHANGELOG 条目与 %s 提交处不一致" % (version, tag))
         elif args.apply and token:
             status, resp = api("POST", "/repos/%s/releases" % slug, token, {
                 "tag_name": tag,
