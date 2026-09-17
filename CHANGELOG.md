@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.3.5] - 2026-09-17
+
+`AGENTS.md` 发版流程补双远端规则：推送从「只推 `origin`」改为「`origin`（GitHub）+ `gitee` 镜像都要推」，已知坑补 gitee 镜像容易漏推、推送凭据（账号密码）与 API 私人令牌的区别；仅仓库指引文档同步，无技能与代码改动。
+
+### 变更
+
+- **`AGENTS.md` 发版流程补双远端推送规则**：第 5 条 release 流程由「tag 与 main 一并推送（`git push origin main --follow-tags`）」补充为**两个远端都要推**——`git push gitee main --follow-tags`，只推 `origin` 会让 gitee 镜像静默落后（本地 `main` 的 upstream 恰指向 gitee）；gitee 走直连、不需要代理
+- **`AGENTS.md` 已知坑补 gitee 镜像说明**：gitee 镜像远端容易漏推（曾出现 gitee 上连一个 tag 都没有、版本页长期为空）；`git credential fill` 取到的 gitee 凭据是**账号密码**（用于 git push），gitee API v5 只认**私人令牌**——gitee 发行版须用令牌另行创建（`POST /api/v5/repos/{owner}/{repo}/releases`，`access_token` 传令牌），不用推送凭据去试
+
+### 说明
+
+- 仅仓库指引文档同步，无技能与代码改动，按分级取**小版本**。
+- `.claude-plugin/marketplace.json` 版本号 2.3.4 → 2.3.5
+
 ## [2.3.4] - 2026-09-17
 
 补 `bug-fix` 的取证口径与上下文节制：新增截图 / 抽样证据的处理规则、同类非缺陷任务的边界说明、自建取证脚本的「落盘 + 截断」要求；`references/root-cause-checklist.md` 同步新增「证据产出与上下文节制」一节（原第 7 节「结论自检」顺延为第 8 节）；未新增技能、技能名与 `description` 不变。
