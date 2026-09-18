@@ -91,6 +91,7 @@ python skills/session-summary/scripts/extract-session.py <会话id> --user   # �
 
 - **配置加载顺序**：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/<技能名>.config.json`（脚本从当前工作目录向上逐级查找，实现「不同项目不同环境」）；③ skill 同级默认配置。配置均 gitignored、凭据不入库，按各技能 `references/config.example.json` 模板在本地创建。
 - **产物落盘按配置来源归属**：显式 `--config` → `~/Downloads/`；项目级 → `<项目根>/.tasks/`；全局默认 → `~/.claude/.tasks/`；均可 `--out-dir` 覆盖（`db-query.py` 与 `log-diagnose.py` 均已按此实现）。`.tasks/` 是过程产物目录，**不提交、不入库**（`check-commit.py` 默认落在 `skills/commit-review/.tasks/`）。
+- **`tmp/` 等过程目录默认不固化**：gitignored 的 `tmp/`、`.tasks/` 里的中间脚本（探针、验证器、mock 测试）**默认视作没有固化**——清掉即失、下次会话不保证还在，别把「下次继续用」建立在它们上。但会话中**反复复用**（跨消息 / 跨会话还会再跑）的中间脚本要**视情况固化**：参数化（去掉硬编码的项目路径、凭据）、自包含后入库到项目合适位置（如 `build/tools/`、`scripts/` 对应目录），并在 AGENTS.md / README 登记用法——判据是「换个会话还用得上吗」：用则固化，一次性就随目录消亡。
 - **每个脚本开头都有 `_ensure_utf8()`**：Windows 控制台默认 GBK，统一强制 UTF-8 输出以规避乱码；新增脚本照抄该函数。
 - **安全判定有两份实现，改动必须同步**：`db_common.py` 供 `gen-fix-sql.py` / `run-sql-file.py` / `sync-table.py` 复用；而 `db-query.py` 自包含一份同名逻辑（`find_project_config` / `is_read_only` / 写策略判定）。放宽只读白名单或写拦截要**两处一起改**。
 - **生产只读三重保障**（SQL 白名单判定 + 会话 `set_session(readonly=True)` + 只读账号），测试环境写操作须用户确认加 `--allow-write`；修改安全判定时只能收紧，不得放宽。
