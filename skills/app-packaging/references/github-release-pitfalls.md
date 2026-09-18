@@ -5,7 +5,7 @@
 ## 令牌分工：控制面走 PAT、数据面走内置 token
 
 - **现象**：Release 署名是 `github-actions[bot]`；或改用作者 PAT 后附件上传反复失败（一跑十几到二十几分钟才挂），构建 job 却全绿。
-- **根因**：① 内置 token 建 Release 时作者就是 bot 身份；② PAT 上传附件不稳定（实测同量附件内置 token 97 秒传完、PAT 三次尝试全失败，且都卡在同一类体积较大的文件上）。**Release 作者一经创建无法修改**（update 接口没有 author 字段），换署名只能删了重建。
+- **根因**：① 内置 token 建 Release 时作者就是 bot 身份；② PAT 上传附件不稳定（实测同量附件内置 token 97 秒传完、PAT 三次尝试全失败，且都卡在同一类体积较大的文件上）；③ 内置 token 建 Release 产生的 `release: published` 事件**不触发**新的 workflow 运行（`GITHUB_TOKEN` 驱动不了 `on: release` 自动化），想加「发版后自动跑点什么」只有 PAT 建的会触发。**Release 作者一经创建无法修改**（update 接口没有 author 字段），换署名只能删了重建。
 - **处置**：**建 / 改 Release 用作者 PAT（署名才是本人），附件传输用内置 `GITHUB_TOKEN`**；release job 给 `permissions: contents: write`。PAT 存仓库 secret（如 `RELEASE_TOKEN`），并在**最早的 job 就真调一次 API**（`/user` 确认身份 + `repos/<repo>` 确认写权限）——几秒暴露令牌问题，别等 40 分钟构建跑完。
 
 ## `gh release create` 先建草稿、传完附件才发布
