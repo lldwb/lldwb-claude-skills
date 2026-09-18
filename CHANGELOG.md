@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.4.3] - 2026-09-18
+
+给 `app-packaging` 补 CI 发 Release 的 GitHub 机制坑位清单——全部为跨项目通用的实测行为（在目标项目 v0.2.0 发版中反复踩到）。
+
+### 变更
+
+- **`app-packaging` 新增 `references/github-release-pitfalls.md`（发 Release 的 GitHub 机制坑位清单）**：10 个实测坑——① 令牌分工：控制面走作者 PAT（署名才是本人）、数据面走内置 token（附件传输稳定，PAT 上传实测三次尝试全败）；② `gh release create` 先建草稿后发布，草稿对匿名接口不可见、会误判「已存在」而跳过；③ 草稿复用续传（按 digest 比对跳过已传、缺什么补什么），且**只复用自己建的**——署名在建 Release 那一刻定死；④ 逐个上传 + 各自重试 + 全部成功才发布，失败附件名与 gh 错误原文写进 `::error::` 注解（**注解匿名可读，job 日志要仓库权限**）；⑤ Release 更新接口只认数字 id，按 tag 的 `PATCH` 是 404；⑥ `make_latest` 默认 true 会抢 Latest，归属按版本号现算不记忆；⑦ `actions/checkout` 会清空既有工作区，跨步骤传文件别在 checkout 前落盘；⑧ `workflow_dispatch` 读默认分支的 yml，改完不推选不到新任务；⑨ 显式 `permissions` 会把未列出的权限清零（如 `gh run download` 需 `actions: read`）；⑩ GitHub 没有重命名附件的接口，改名只能先传新名、校验和就位后再删旧名
+- **`app-packaging` 的 `SKILL.md` / `README.md` 同步引用**该清单
+
+### 说明
+
+- 本次为**技能内容补充**（新增 1 个 references 坑位清单，无技能增删、无流程语义变更、无脚本改动），按分级取**小版本**。
+- 技能数量仍 27、技能名与分发路径不变；`config.json`（本地启用清单，不入库）无需改动。
+- `.claude-plugin/marketplace.json` 版本号 2.4.2 → 2.4.3
+
 ## [2.4.2] - 2026-09-17
 
 把 `.tasks/` 里**有长期复用价值**的过程产物固化进仓库：新增 2 个仓库级工具（技能仓库自检、gitee 镜像发行版补齐）、1 个技能脚本（会话记录抽取）、1 组技能自测（`mr-create` 的 38 项用例）与 1 个历史改写模板，同时给 `release.py` 补上 Release 正文的回读与写回通道，并把过程中的规则沉淀进文档（批量替换教训、技能骨架与写法基准）。
