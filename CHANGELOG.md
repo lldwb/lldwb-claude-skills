@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.4.5] - 2026-09-19
+
+给 `session-summary` 补两条审视项（未提交改动去向、回流判据澄清），给 `app-packaging` 的坑位清单补「内置 token 不触发 release 事件」论据，并在 `AGENTS.md` 已知坑固化两条实测的通用开发坑（Windows zip 解压、跨主机重定向去凭据）——均出自一次「在别的仓库操作、产出未提交即被后续会话取代」的会话实证。
+
+### 变更
+
+- **`session-summary` 第 2 步补「未提交改动须注明去向」**：会话结束时未提交的工作可能在会话后被 `git reset` / 覆盖 / 方案被否决而消失（实测发生过：产出未提交，会话结束不久即被 reset 丢弃、方案被后续会话否决），需要保留就先落盘快照再总结
+- **`session-summary` 第 4 步补回流判据澄清**：会话记录文件所在的项目目录 = 启动时的 cwd，**不代表操作对象**——判断是否回流以操作对象（提交所属仓库 / 时间线里 `cd` 的目标仓库 / 讨论目标）为准，别因「文件在本仓库目录下」就跳过回流
+- **`app-packaging` pitfalls「令牌分工」节补第三条理由**：内置 token 建 Release 产生的 `release: published` 事件**不触发**新的 workflow 运行（`GITHUB_TOKEN` 驱动不了 `on: release` 自动化）——为「建 / 改 Release 用 PAT」再添一条不依赖署名场景的论据
+- **`AGENTS.md` 已知坑补两条通用开发坑**：① Windows 下解压 zip 用系统 bsdtar（`C:\Windows\System32\tar.exe`），Git Bash 的 GNU tar 读不了 zip、还会把 `E:\...` 绝对路径当远程主机；② 下载带鉴权的重定向资源时**跨主机重定向必须去掉 Authorization**，并整体缓冲后再解码
+
+### 说明
+
+- 本次为文档约定与技能审视项的补充（无技能增删、无流程语义变更、无脚本改动），按分级取**小版本**。
+- 技能数量仍 27、技能名与分发路径不变；`config.json`（本地启用清单，不入库）无需改动。
+- `.claude-plugin/marketplace.json` 版本号 2.4.4 → 2.4.5
+
 ## [2.4.4] - 2026-09-18
 
 固化「tmp/ 等过程目录默认不固化」的约定——gitignored 的 `tmp/`、`.tasks/` 里的中间脚本默认视作没有固化，反复复用的才视情况固化入库。
