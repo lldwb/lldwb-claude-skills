@@ -118,6 +118,8 @@ python skills/session-summary/scripts/extract-session.py <会话id> --user   # �
 - `skills/*/.tasks/`、`__pycache__/`、`*.pyc` 是本地产物（已在 .gitignore 中），提交时勿 `git add`。
 - 创建 GitHub Release 需要带 **Contents: write** 的 token（`release.py` 读 `GITHUB_TOKEN` / `GH_TOKEN` 环境变量）。别拿 `GET /repos/{owner}/{repo}` 的 `permissions` 字段判断能不能写 —— 那反映的是**用户在该仓库的角色**、不是所持 fine-grained PAT 的实际授权，照它判断会在创建时吃 403 `Resource not accessible by personal access token`；手边只有推送凭据时，`git credential fill` 可取到能用的那份。
 - **`gitee` 镜像远端容易漏推**：`origin`（GitHub）是本文档发版流程里写明的那个远端，但本机另配了 `gitee` 镜像、且本地 `main` 的 upstream 指向它——只推 `origin` 时镜像会静默落后（曾出现 gitee 上连一个 tag 都没有、版本页长期为空）。发版时**两个远端都推**；`gitee` 走直连（需要代理的是 GitHub）。另注意 `release.py` 只对接 GitHub API：`git credential fill` 取到的 gitee 凭据是**账号密码**（用于 git push），gitee API v5 只认**私人令牌**，故 gitee 发行版须用令牌另行创建（`POST /api/v5/repos/{owner}/{repo}/releases`，`access_token` 传令牌），不用推送凭据去试——仓库根 `create-gitee-release.py` 已封装该流程（令牌取 `GITEE_TOKEN` 或 `.tasks/gitee-token.txt`），`--verify` 可回读远端正文与 CHANGELOG 比对。
+- **Windows 下解压 zip 用系统 bsdtar**（`C:\Windows\System32\tar.exe`）：Git Bash 自带的 GNU tar 读不了 zip，还会把 `E:\...` 这类 Windows 绝对路径解析成远程主机（实测报 `tar: Cannot connect to E: resolve failed`）。凡「下载 zip → 解压」的脚本链路在 Windows 上优先尝试系统 `tar.exe`，别用 GNU tar 硬试。
+- **跨主机重定向必须去掉 Authorization**：下载带鉴权的重定向资源（如 GitHub Actions artifact 302 到签名存储）时，凭据只在原主机有效——重定向后继续带 Authorization 头会 401；客户端实现为「跨主机重定向时丢弃请求头」，并整体缓冲后再解码（多字节字符按数据块 `toString` 会在块边界被截断）。
 
 ## 提交规范
 
