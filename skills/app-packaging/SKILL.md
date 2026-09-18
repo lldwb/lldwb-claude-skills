@@ -18,7 +18,7 @@ description: 打包与分发标准工作流——把应用做成「使用者拿�
 | 单文件可执行 | 把脚本 / 应用打成目标机无需安装运行时的单个可执行文件（Node SEA 见 `references/node-sea.md`） |
 | 产物形态决策 | 在裸目录 / zip / 单文件 / 安装包之间选定形态并产出可分发件 |
 | 跨平台构建 | 多平台 × 多架构产物的构建编排（本地多环境或 CI matrix） |
-| CI 构建与分发 | 按 tag 或手动触发构建，产物发到 Release 附件 / 制品库，附校验和（见 `references/ci-distribution.md`） |
+| CI 构建与分发 | 按 tag 或手动触发构建，产物发到 Release 附件 / 制品库，附校验和（见 `references/ci-distribution.md`；发 Release 的 GitHub 机制坑位清单见 `references/github-release-pitfalls.md`） |
 | 版本注入 | 产物内版本号与 git tag 一致（`--version` 可查），并产出校验和清单 |
 
 **不适用（改用其他技能）**：

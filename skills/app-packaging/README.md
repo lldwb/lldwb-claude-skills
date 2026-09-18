@@ -25,6 +25,7 @@
 | `SKILL.md` | 执行指令（形态决策 → 依赖盘点 → 平台矩阵 → 构建编排 → 分发 → 验证） |
 | `references/node-sea.md` | Node 单文件可执行：`--build-sea` 与 blob + postject 两条路径、签名顺序、交叉构建限制、已知坑 |
 | `references/ci-distribution.md` | GitHub Actions：触发方式、matrix、**Artifacts 与 Release 附件的区别与坑**、校验和、权限 |
+| `references/github-release-pitfalls.md` | 发 Release 的 GitHub 机制坑位清单：令牌分工（控制面 PAT / 数据面内置）、草稿复用续传、逐个上传重试、Latest 按版本号现算、更新接口只认数字 id、checkout 清空工作区等 |
 | `assets/workflow-build-release.yml` | 多平台构建 + 发 Release 附件的 workflow 模板（占位符待替换，版本号需现核） |
 | `assets/sea-config.json` | Node SEA 配置模板 |
 
