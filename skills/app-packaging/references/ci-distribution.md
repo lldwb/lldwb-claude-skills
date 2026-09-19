@@ -12,6 +12,30 @@
 
 判据：**产物要与版本一一对应时用 tag 触发**。tag 触发的 workflow 里版本号取 `github.ref_name`（tag 名）注入产物，**别再让使用者手填一遍**——两处各写一份版本号必然漂移。
 
+### 无 gh CLI 环境手动触发（API 兜底）
+
+本机没有 `gh` 时，触发 / 查状态 / 取日志全走 REST API，token 用 `git credential fill` 取推送凭据（**只进命令、不落盘不打印**）：
+
+```bash
+CRED=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill 2>/dev/null | sed -n 's/^password[=]//p')
+
+# 触发手动构建（workflow_dispatch，不打 tag、不发版）
+curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+  -H "Authorization: Bearer $CRED" -H 'Accept: application/vnd.github+json' \
+  "https://api.github.com/repos/<owner>/<repo>/actions/workflows/<workflow>.yml/dispatches" \
+  -d '{"ref":"main"}'
+
+# 查最近运行与 job 状态
+curl -s -H "Authorization: Bearer $CRED" \
+  "https://api.github.com/repos/<owner>/<repo>/actions/runs?per_page=3"
+
+# 取某 job 日志（302 重定向到签名存储；跨主机后 curl 默认丢 Authorization——别加 --location-trusted，会把凭据带到重定向目标）
+curl -sL -H "Authorization: Bearer $CRED" \
+  "https://api.github.com/repos/<owner>/<repo>/actions/jobs/<job_id>/logs"
+```
+
+要点：`api.github.com` 常可直连（与 `github.com` 不同出口，后者可能要代理）；触发返回 204 即成功；日志接口的跨主机重定向坑见仓库 `AGENTS.md` 已知坑。
+
 ## 多平台编排（matrix）
 
 - 维度是 **OS × 架构**（`windows-latest` / `macos-latest` / `ubuntu-latest` × `x64` / `arm64`）；
