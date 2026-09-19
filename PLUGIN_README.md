@@ -55,7 +55,7 @@
 | nas-disk-diagnostic | NAS 硬盘诊断与可视化报告（RAID / SMART，扩展卡硬盘须 `-d sat`） |
 | git-clean-branches | 分支清理（已合并 / 过期；默认 dry-run + 保护清单） |
 | git-rollback | 分支回滚（reset / revert；默认 dry-run + 备份分支） |
-| git-worktree | worktree 管理（统一目录 + 内容迁移 + 环境文件复制） |
+| git-worktree | worktree 管理（统一目录 + 内容迁移 + 环境文件复制 + 合回当前分支） |
 | git-history-rewrite | 历史改写（备份分支 + 方案先行 + 时间恢复 + 四重验证 + 强推） |
 | session-summary | 会话总结与 skills 迭代（总结 + 优化点评估 + 实施 + 目标仓库 `AGENTS.md` 回流） |
 | app-packaging | 打包与分发（形态决策 + 跨平台构建边界 + CI 构建与 Release 附件 + 校验和） |
