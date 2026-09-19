@@ -41,7 +41,7 @@ description: 会话总结与 skills 迭代——把一次 Claude Code 会话收�
 ### 第 1 步：取证会话动作
 
 - `git log --oneline -N` 取本次会话的提交（按时间或用户指定范围）；`git show <sha> --stat` 看每个提交改了哪些文件；
-- 会话中的关键决策与踩坑（从对话记录回顾）：哪些操作出错、哪些操作反复调整、最终采用什么做法——记录文件常达十几 MB，用 `scripts/extract-session.py` **落盘抽取再读**（`--user` 用户消息全文 / `--assistant N` 尾部 assistant 文本 / `--timeline` 逐条时间线 / `--transcript` 紧凑全文），别整份读 transcript。
+- 会话中的关键决策与踩坑（从对话记录回顾）：哪些操作出错、哪些操作反复调整、最终采用什么做法——记录文件常达十几 MB，用 `scripts/extract-session.py` **落盘抽取再读**（`--user` 用户消息全文，上下文压缩摘要默认过滤、`--with-summary` 保留 / `--assistant N` 尾部 assistant 文本 / `--timeline` 逐条时间线 / `--transcript` 紧凑全文），别整份读 transcript。
 
 ### 第 2 步：总结会话
 

@@ -127,8 +127,17 @@ def tool_brief(name, inp):
     return detail
 
 
-def mode_user(path, limit):
-    out, n = [], 0
+# 上下文压缩摘要（harness 在上下文耗尽时以用户消息形式注入的续接说明）不是用户输入，
+# 长会话里它动辄占一半以上行数，且内容与 assistant 尾部文本高度重复。
+SUMMARY_PREFIXES = ("This session is being continued", "This session is being resumed")
+
+
+def is_compression_summary(text):
+    return text.startswith(SUMMARY_PREFIXES)
+
+
+def mode_user(path, limit, with_summary=False):
+    out, n, skipped = [], 0, 0
     for rec in iter_records(path):
         if rec.get("type") != "user":
             continue
@@ -136,9 +145,15 @@ def mode_user(path, limit):
             t = (t or "").strip()
             if not t or t.startswith("Caveat:") or t.startswith("<"):
                 continue
+            if is_compression_summary(t):
+                skipped += 1
+                if with_summary:
+                    out.append("### %s\n%s\n" % (rec.get("timestamp", ""), clip(t, limit)))
+                continue
             n += 1
             out.append("### %s\n%s\n" % (rec.get("timestamp", ""), clip(t, limit)))
-    return out, "%d 条用户消息" % n
+    note = "（已过滤 %d 条上下文压缩摘要，--with-summary 保留）" % skipped if skipped else ""
+    return out, "%d 条用户消息%s" % (n, note)
 
 
 def mode_assistant(path, limit, tail):
@@ -243,7 +258,9 @@ def main():
     ap = argparse.ArgumentParser(description="抽取 Claude Code 会话记录（只取数，不判定）")
     ap.add_argument("session", help="会话 id 或 .jsonl 文件路径")
     ap.add_argument("--project", help="会话所属项目路径（给会话 id 时用于定位，缺省当前目录）")
-    ap.add_argument("--user", action="store_true", help="用户消息全文（缺省模式）")
+    ap.add_argument("--user", action="store_true", help="用户消息全文（缺省模式，上下文压缩摘要默认过滤）")
+    ap.add_argument("--with-summary", action="store_true",
+                    help="用户模式保留上下文压缩摘要（缺省过滤）")
     ap.add_argument("--assistant", nargs="?", type=int, const=4, metavar="N",
                     help="尾部 N 条 assistant 文本消息（缺省 4 条；N<=0 表示全部）")
     ap.add_argument("--timeline", action="store_true", help="逐条时间线（含工具调用摘要）")
@@ -277,7 +294,7 @@ def main():
     defaults = {"user": 0, "assistant": 2500, "timeline": 900, "transcript": 0}
     limit = defaults[mode] if args.limit is None else args.limit
     if mode == "user":
-        lines, summary = mode_user(path, limit)
+        lines, summary = mode_user(path, limit, args.with_summary)
     elif mode == "assistant":
         lines, summary = mode_assistant(path, limit, args.assistant)
     elif mode == "timeline":
