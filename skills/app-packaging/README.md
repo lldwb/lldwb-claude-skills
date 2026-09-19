@@ -16,6 +16,7 @@
 - 依赖盘点与版本注入：运行时是否内嵌、最低版本写进 `--version`；产物版本与 git tag 单一来源，文件名含版本 / 平台 / 架构
 - 平台矩阵与交叉构建边界：Windows x64 / macOS arm64 / Linux x64 是三个不同产物；原生模块、字节码快照、需平台签名的产物必须对应平台构建，拿不准按「不跨」处理
 - CI 构建与分发：多平台 matrix（模板 `assets/workflow-build-release.yml`）、**Artifacts 与 Release 附件的区别与坑**（保留期、打 zip、剥可执行位）、`SHA256SUMS`
+- 产物体积压缩：**先量化构成再裁剪**——单文件压测看压缩后贡献、压缩算法实测（deflate < gzip < bzip2 < LZMA/xz）、electron-builder 裁剪三件套与匹配规则坑、CI 冒烟护栏及其「测不出硬件退化」的边界（`references/runtime-trimming.md`）
 - 验证口径：在**干净环境**跑 `--version` 与冒烟命令——构建机 / CI 上能跑不构成证据；签名与改动的顺序不可颠倒（先改后签）
 
 ## 文件
@@ -25,6 +26,7 @@
 | `SKILL.md` | 执行指令（形态决策 → 依赖盘点 → 平台矩阵 → 构建编排 → 分发 → 验证） |
 | `references/node-sea.md` | Node 单文件可执行：`--build-sea` 与 blob + postject 两条路径、签名顺序、交叉构建限制、已知坑 |
 | `references/ci-distribution.md` | GitHub Actions：触发方式、matrix、**Artifacts 与 Release 附件的区别与坑**、校验和、权限 |
+| `references/runtime-trimming.md` | 产物体积压缩与运行时裁剪：构成量化、单文件压测、算法实测、electron-builder 裁剪三件套、冒烟护栏与边界、Range 探针 |
 | `references/github-release-pitfalls.md` | 发 Release 的 GitHub 机制坑位清单：令牌分工（控制面 PAT / 数据面内置）、草稿复用续传、逐个上传重试、Latest 按版本号现算、更新接口只认数字 id、checkout 清空工作区等 |
 | `assets/workflow-build-release.yml` | 多平台构建 + 发 Release 附件的 workflow 模板（占位符待替换，版本号需现核） |
 | `assets/sea-config.json` | Node SEA 配置模板 |
