@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.4.6] - 2026-09-19
+
+给 `session-summary` 的会话抽取脚本补「压缩摘要过滤」（长会话的 `--user` 输出里 harness 注入的续接摘要占六成，真实用户消息被淹没、总结时被迫另写辅助脚本过滤），并在 `AGENTS.md` 发版规则补「用户明确要求时发版条目可改」的例外条款——判例来自 github-desktop-zh-cn 仓库 v0.3.0（用户行使例外权修改发版条目，该仓库已回流同款条款）。
+
+### 变更
+
+- **`session-summary` 的 `extract-session.py` 默认过滤上下文压缩摘要**：harness 在上下文耗尽时以用户消息形式注入「This session is being continued」续接说明，长会话里动辄占 `--user` 输出一半以上行数、且内容与 assistant 尾部文本高度重复。`mode_user` 识别其起始文案并跳过，summary 注明「已过滤 N 条上下文压缩摘要」；新增 `--with-summary` 保留。`--timeline` 不动（压缩点是会话真实事件）。实测：30 MB 会话的 `--user` 从 52 条降到 22 条真实用户消息；SKILL.md 用法描述同步
+- **`AGENTS.md` 发版规则补「用户明确要求」例外**：「发版条目一经创建不得在后续提交中修改」增加例外条款——用户明确要求时，改时 CHANGELOG 条目与 GitHub / gitee 两处 Release 正文一起改并逐字复核（GitHub 侧由 `release.py` 重写、gitee 侧由 `create-gitee-release.py` 回写）；判例为 github-desktop-zh-cn 仓库 v0.3.0，该仓库已按同一规则回流
+
+### 说明
+
+- 本次为技能脚本缺陷修复 + 仓库规则补充（无技能增删、无流程语义变更），按分级取**小版本**。
+- 技能数量仍 27、技能名与分发路径不变；`config.json`（本地启用清单，不入库）无需改动。
+- `.claude-plugin/marketplace.json` 版本号 2.4.5 → 2.4.6
+
 ## [2.4.5] - 2026-09-19
 
 给 `session-summary` 补两条审视项（未提交改动去向、回流判据澄清），给 `app-packaging` 的坑位清单补「内置 token 不触发 release 事件」论据，并在 `AGENTS.md` 已知坑固化两条实测的通用开发坑（Windows zip 解压、跨主机重定向去凭据）——均出自一次「在别的仓库操作、产出未提交即被后续会话取代」的会话实证。

@@ -3,7 +3,7 @@
   "owner": {
     "name": "lldwb-claude-skills"
   },
-  "version": "2.4.5",
+  "version": "2.4.6",
   "plugins": [
     {
       "name": "dev-skills",
