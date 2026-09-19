@@ -1,6 +1,6 @@
 ---
 name: git-worktree
-description: 管理 Git worktree：在项目平级的统一目录下创建（自带智能默认分支名与基础分支）、列出状态、删除与清理无效引用，并支持在 worktree 之间迁移未提交改动或 stash、自动复制被 gitignore 的环境文件、按项目实际 IDE 命令打开。当用户要求"开一个 worktree""在独立目录里做这个需求""并行开发两个分支互不干扰""把当前未提交的改动挪到另一个 worktree""清理失效的 worktree 记录"时使用。边界：多模块并行改造的编排（worktree + 子代理 + 合并）用 module-batch；经 opencode CLI 中转的并行编排用 opencode-batch；分支清理用 git-clean-branches。
+description: 管理 Git worktree：在项目平级的统一目录下创建（自带智能默认分支名与基础分支）、列出状态、删除与清理无效引用，并支持在 worktree 之间迁移未提交改动或 stash、自动复制被 gitignore 的环境文件、按项目实际 IDE 命令打开、把 worktree 分支合回当前分支。当用户要求"开一个 worktree""在独立目录里做这个需求""并行开发两个分支互不干扰""把当前未提交的改动挪到另一个 worktree""清理失效的 worktree 记录""把 worktree 的改动合回当前分支"时使用。边界：多模块并行改造的编排（worktree + 子代理 + 合并）用 module-batch；经 opencode CLI 中转的并行编排用 opencode-batch；分支清理用 git-clean-branches。
 ---
 
 # 管理 Git worktree
@@ -15,7 +15,8 @@ description: 管理 Git worktree：在项目平级的统一目录下创建（自
 
 - 在独立目录里开发一个分支，与当前工作目录互不干扰（同时改多个分支 / 一个需求跑一条分支）；
 - 需要把当前未提交的改动或 stash 迁移到某个 worktree；
-- 清理失效的 worktree 记录、列出各 worktree 的分支与状态。
+- 清理失效的 worktree 记录、列出各 worktree 的分支与状态；
+- **收尾**：用户要求把 worktree 分支的改动合回当前分支、删除 worktree 与分支。
 
 **不适用（改用其他技能）**：
 
@@ -29,6 +30,7 @@ description: 管理 Git worktree：在项目平级的统一目录下创建（自
 3. **先查冲突**：目标目录已存在、或目标分支已被其他 worktree 检出时，先报告并询问，不覆盖、不抢占。
 4. **删除要确认**：`remove` 会删除整个目录（含其中未提交的改动），执行前先确认目标目录干净（`git status --porcelain` 为空），有残留先停下问用户。
 5. **不越界**：不删分支（`remove` 只删工作目录，分支保留）、不改写历史、不自动 push；需要这些动作时转对应技能。
+6. **合回先判历史形态**：把 worktree 分支合回当前分支前，先 `git log --oneline --merges` 看仓库历史——纯线性（无合并提交）用 rebase + `--ff-only` 快进，不造合并提交；已有合并提交历史时按仓库规范或用户偏好选 merge 方式。
 
 ## 命令
 
@@ -40,6 +42,7 @@ description: 管理 Git worktree：在项目平级的统一目录下创建（自
 | `prune` | 清理孤立的 worktree 记录（目录已被手工删除的情况） |
 | `migrate <目标> --from <源>` | 把未提交改动从源迁移到目标 worktree |
 | `migrate <目标> --stash` | 把当前 stash 应用到目标 worktree |
+| `merge` | 把 worktree 分支合回当前分支（用户要求时；判历史形态选合并方式） |
 
 ## 执行步骤
 
@@ -101,6 +104,21 @@ git worktree prune         # 清理目录已被手工删除的无效记录
 3. 展示将迁移的文件清单，确认后执行：优先 `git -C "<源>" stash push -u` → `git -C "<目标>" stash pop`；跨机 / 跨目录不便 stash 时用 `git diff` + `git apply`（保留补丁文件备查）。
 4. 复核：源工作区已干净、目标出现对应改动；冲突时停下交用户处理，不自行取舍。
 
+### 5. `merge`：合回当前分支（用户要求时）
+
+1. 确认两侧干净：主仓库当前分支 `git status --porcelain` 为空、worktree 已提交干净——未提交内容先提交或 migrate。
+2. **判历史形态**：`git log --oneline --merges` 为空 = 纯线性历史；非空 = 已有合并提交。
+3. 纯线性历史：先变基再快进，不造合并提交（当前分支期间可能已前进，先拉平）：
+
+   ```bash
+   git -C "<worktree 路径>" rebase <当前分支名>
+   git merge --ff-only <worktree 分支名>     # 在主仓库当前分支上执行
+   ```
+
+4. 已有合并提交历史：按仓库规范或用户偏好选 merge 方式（普通 `git merge` / `--no-ff`），拿不准先问。
+5. 验证：`git log --oneline -N` 看合入结果；两棵树相关文件 `git hash-object` 逐一比对一致；重跑该项目验证命令（测试等）。
+6. 收尾（用户同时要求删除时）：先 `git worktree remove "<路径>"`，再 `git branch -d <分支>`（`-d` 安全删除，分支未完全合入会拒绝；确认无独有提交才删）。
+
 ## 验证
 
 - 创建后 `git worktree list` 同时可见主仓库与新 worktree，且新 worktree 的分支与基础分支正确。
@@ -108,12 +126,13 @@ git worktree prune         # 清理目录已被手工删除的无效记录
 - 声明的环境文件确实已复制（逐个 `ls` 核对），未把模板文件（`.env.example`）复制过去。
 - `remove` 后目录消失、`git worktree list` 无残留记录、被删除 worktree 的分支仍在（`git branch --list <分支>`）。
 - `migrate` 后源工作区干净、目标改动与预期一致。
+- `merge` 后当前分支含 worktree 分支的全部提交且无合并提交（纯线性历史时）；相关文件两树一致、验证命令通过；`remove` + `branch -d` 后 worktree 记录与分支都不在。
 
 **判定口径**：上述与本次操作相关的项逐项通过方可声明完成；不通过时停下报告，**不静默放行**。
 
 ## 任务目标
 
-按统一目录约定完成 worktree 的创建 / 列出 / 删除 / 迁移：路径不嵌套、环境文件已补齐、删除前目录干净且分支保留、迁移不覆盖目标已有改动。
+按统一目录约定完成 worktree 的创建 / 列出 / 删除 / 迁移 / 合回：路径不嵌套、环境文件已补齐、删除前目录干净且分支保留、迁移不覆盖目标已有改动、合回不破坏仓库历史形态（纯线性仓库不造合并提交）。
 
 ## 注意事项
 
@@ -121,6 +140,7 @@ git worktree prune         # 清理目录已被手工删除的无效记录
 
 - **路径嵌套防护**：在 worktree 内再建 worktree 时，相对路径会拼出双层 `.zcf`；始终用绝对路径。
 - **删除前先看目录**：`remove` 删除的是整个工作目录——先 `git status`，未提交内容要么迁移要么确认丢弃，不要直接 `--force`。
+- **合回收尾**：rebase 前两侧都须干净；`--ff-only` 失败说明两侧已分叉（先 rebase 再合）；删分支只用 `-d`（`-D` 会丢弃未合入的独有提交）。
 - **`list` 的常见异常**：目录被手工 `rm -rf` 后 `list` 仍显示记录（prune 可清理）；目录存在但分支被删（`git worktree repair` 或重建）。
 - **性能与磁盘**：worktree 共享主仓库的 `.git`，不额外复制历史；但构建产物与依赖目录（如 `node_modules/`、`target/`）**不共享**，首次使用需各自安装。
 - **跨平台**：路径含空格时全程加引号；Windows 下不要用 `~` 展开。
@@ -128,4 +148,4 @@ git worktree prune         # 清理目录已被手工删除的无效记录
 
 ## 输入
 
-要执行的操作与对象（可选）：操作类型（add / list / remove / prune / migrate）、worktree 名或路径、分支名、基础分支、迁移源：
+要执行的操作与对象（可选）：操作类型（add / list / remove / prune / migrate / merge）、worktree 名或路径、分支名、基础分支、迁移源、合并目标分支：
