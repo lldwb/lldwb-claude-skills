@@ -28,7 +28,7 @@
 
 ## 包含的技能
 
-`dev-skills` 插件包含 27 个技能：
+`dev-skills` 插件包含 28 个技能：
 
 | Skill | 用途 |
 |-------|------|
@@ -59,6 +59,7 @@
 | git-history-rewrite | 历史改写（备份分支 + 方案先行 + 时间恢复 + 四重验证 + 强推） |
 | session-summary | 会话总结与 skills 迭代（总结 + 优化点评估 + 实施 + 目标仓库 `AGENTS.md` 回流） |
 | app-packaging | 打包与分发（形态决策 + 跨平台构建边界 + CI 构建与 Release 附件 + 校验和） |
+| skill-router | 技能路由判断（任务模糊时盘点可用技能、AI 判断推荐 + 理由 + 备选；查规范章节转 spec-route） |
 
 技能清单定义在 `.claude-plugin/marketplace.json`。
 
