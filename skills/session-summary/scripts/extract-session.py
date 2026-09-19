@@ -136,6 +136,23 @@ def is_compression_summary(text):
     return text.startswith(SUMMARY_PREFIXES)
 
 
+def command_args(text):
+    """技能命令包装的消息里取 <command-args> 的用户参数；找不到返回空串。
+
+    技能启动的会话其用户输入是 harness 以
+    `<command-message>…<command-name>…<command-args>…</command-args>` 包装的，
+    参数才是用户原话，包装本身是注入、与时间线冗余。
+    """
+    start = text.find("<command-args>")
+    if start == -1:
+        return ""
+    start += len("<command-args>")
+    end = text.find("</command-args>", start)
+    if end == -1:
+        return ""
+    return text[start:end].strip()
+
+
 def mode_user(path, limit, with_summary=False):
     out, n, skipped = [], 0, 0
     for rec in iter_records(path):
@@ -143,8 +160,12 @@ def mode_user(path, limit, with_summary=False):
             continue
         for t in user_texts(rec):
             t = (t or "").strip()
-            if not t or t.startswith("Caveat:") or t.startswith("<"):
+            if not t or t.startswith("Caveat:"):
                 continue
+            if t.startswith(("<command-message>", "<command-name>")):
+                t = command_args(t)
+                if not t:
+                    continue
             if is_compression_summary(t):
                 skipped += 1
                 if with_summary:
