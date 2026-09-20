@@ -144,6 +144,7 @@ git worktree prune         # 清理目录已被手工删除的无效记录
 - **`list` 的常见异常**：目录被手工 `rm -rf` 后 `list` 仍显示记录（prune 可清理）；目录存在但分支被删（`git worktree repair` 或重建）。
 - **性能与磁盘**：worktree 共享主仓库的 `.git`，不额外复制历史；但构建产物与依赖目录（如 `node_modules/`、`target/`）**不共享**，首次使用需各自安装。
 - **跨平台**：路径含空格时全程加引号；Windows 下不要用 `~` 展开。
+- **Windows 下 `remove` 后目录可能删不干净（实测踩过）**：`git worktree remove` 成功、git 注册已注销、目录内容已删净，但残留一个**空目录**被某进程句柄占住——MSYS 的 `rmdir` / PowerShell `Remove-Item -Recurse -Force` / `cmd rmdir /s /q` 全报「另一个程序正在使用此文件」，先 `tasklist` 排查是否有残留进程（如误把应用本体拉起来的 Electron / 测试子进程）；确认 git 侧干净（`git worktree list` 无记录、目录 `find` 无内容）后，剩下的空目录**等占用进程退出再删即可**，不影响仓库状态，如实报告用户即可，别反复重试删除命令。另注意：`remove` 前先 `cd` 出该 worktree 目录，shell 自身的工作目录就是最常见的占用者（`Permission denied` 首见就是这个）。
 - **确认请求无应答时**：`list` / `add` 等可逆动作按原计划继续；`remove`（删目录）属不可逆动作，停下等待确认并在汇报中标明"该决策未获用户确认"。
 
 ## 输入
