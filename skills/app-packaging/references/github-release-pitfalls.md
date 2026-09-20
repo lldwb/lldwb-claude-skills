@@ -61,3 +61,10 @@
 
 - **根因**：发布步骤对已发布的 Release 直接跳过。强推 tag 重跑 CI 不会覆盖已发布版本的产物与正文。
 - **处置**：改已发布版本的**正文**直接 `gh release edit <tag> --notes-file <文件>`（只换正文、不碰附件）；改**产物 / 署名**只能删了重建（可先把附件备份到 artifacts 供续建，或走项目自己的修复工作流）。
+
+## 取资产别用 API 资产端点，用 `browser_download_url` 直链
+
+- **根因**：`GET /repos/{o}/{r}/releases/assets/<id>` 不带 `Accept: application/octet-stream` 时返回的是该资产的 **JSON 元数据**，不是二进制——消费端脚本若用资产对象里的 `url` 字段当下载地址，下载回来的是 `{"ur…` 开头的 JSON，肉眼都看得出、程序却常因「挑对了名字」而漏掉下载地址这道验证。
+- **实证**：某 CLI 的自更新从最早版本起就没装成过、多个版本无人发现——按名字挑对了附件，url 却给的是资产端点；有文件头校验护栏的一侧被拦下（侥幸没坏），无护栏的一侧会把 JSON 当安装包启动（更糟）。
+- **处置**：下载方只信资产对象里的 **`browser_download_url`**（`/releases/download/<tag>/<文件>` 直链），或请求头带 `Accept: application/octet-stream`；发版后的「下载 / 更新链路实测」（见 SKILL.md 验证）就是这道兜底——下载到的要是产物本身，不是 JSON / HTML。
+
