@@ -63,6 +63,7 @@ python skills/code-review/scripts/review-fetch.py <修订号>              # 评
 python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目录> --out <xlsx> --source "<本册来源>"
 python skills/mr-create/scripts/selftest.py                               # mr-create 自测：38 项用例（改过 prepare-mr.py 必跑）
 python skills/session-summary/scripts/extract-session.py <会话id> --user   # 会话记录抽取（十几 MB，别整份读 transcript）
+python skills/session-summary/scripts/selftest.py                          # session-summary 自测：18 项用例（改过 extract-session.py 必跑）
 ```
 
 三方依赖按技能独立安装：`pip install -r skills/db-query/requirements.txt`（db-query）、`pip install -r skills/check-rule-extract/requirements.txt`（check-rule-extract，版本已固定）；其余仅用标准库。
