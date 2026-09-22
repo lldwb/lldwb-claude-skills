@@ -11,7 +11,7 @@ Git 历史改写：对既有提交做结构性修正（拆分 / 改类型 / 重�
 git branch backup/<分支>-<日期>[-<主题>]
 ```
 
-**边界**：把分支回滚到历史版本（`reset` / `revert`）用 `git-rollback`；清理分支用 `git-clean-branches`；只评审提交质量、不改写用 `commit-review`。
+**边界**：把分支回滚到历史版本（`reset` / `revert`）用 `git-rollback`；清理分支用 `git-clean-branches`；只做代码评审、不改写用 `code-review`。
 
 ## 能力
 

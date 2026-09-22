@@ -36,7 +36,7 @@
 | feature-dev | 需求开发全流程（需求分析 → 方案 → 规划文档三件套 → 实现 → 实测 → 提交；支持六阶段交互模式；纯文档产出转 doc-sync） |
 | code-optimize | 代码优化（小范围）标准工作流（结构性/分层重构转 refactor） |
 | refactor | 重构（结构改造、行为不变）：契约先行 + 测试基线 + 改造与审查分离 + 循环验证（小范围优化转 code-optimize） |
-| commit-review | 提交评审（七维核查，只检查不改代码） |
+| code-review | 代码评审（提交 / 合并 / 模块 / 项目整体 / 架构五种对象，只检查不改代码） |
 | log-diagnose | 日志自动诊断（Kibana，BUG 出双 MD） |
 | db-query | 数据库查询（生产只读） |
 | module-batch | 多模块并行改造（worktree + 子代理 + 独立审查） |

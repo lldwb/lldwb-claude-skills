@@ -12,7 +12,7 @@
 ## 通用决策口诀
 
 - **改不改代码？**
-  - 不改 → 按对象：查提交 `commit-review` / 查日志 `log-diagnose` / 查库 `db-query` / 前端报错 `frontend-error-diagnose` / 讲概念 `project-explain` / 查规范 `spec-route`；写文档 → 对齐既有 `doc-sync`、建立或增补指引 `repo-init`
+  - 不改 → 按对象：查提交 `code-review` / 查日志 `log-diagnose` / 查库 `db-query` / 前端报错 `frontend-error-diagnose` / 讲概念 `project-explain` / 查规范 `spec-route`；写文档 → 对齐既有 `doc-sync`、建立或增补指引 `repo-init`
   - 改 → **行为变不变？** 变 → 缺陷 `bug-fix` / 新需求 `feature-dev` / 文案国际化 `i18n-transform`；不变 → 注释层 `comment-supplement` / 小范围 `code-optimize` / 结构 `refactor`
 - **git 动作**：提交 `commit-create` / 提 MR·PR `mr-create` / 历史改写 `git-history-rewrite` / 回滚 `git-rollback` / 清分支 `git-clean-branches` / worktree `git-worktree`
 - **编排**：经 opencode CLI `opencode-batch` / worktree+子代理 `module-batch` / 逐 Controller `check-rule-extract`
@@ -29,7 +29,7 @@
 | 结构改造 | `refactor` | 对外行为不变、分层 / 迁移 / 批量同构；契约先行 + 测试基线 |
 | 注释补齐 | `comment-supplement` | 严格注释层面；与代码改动并存用 `bug-fix` |
 | 文案国际化 | `i18n-transform` | 硬编码文案 → 资源文件，三条改造线 |
-| 提交评审 | `commit-review` | 只检查不改代码，评审指定 sha / 分支 / PR |
+| 代码评审 | `code-review` | 只检查不改代码；对象：提交（sha/分支/PR）/ 合并（分支区间）/ 模块 / 项目整体 / 架构 |
 | 日志诊断 | `log-diagnose` | trace_id + 时间窗，Kibana 多环境；BUG 出双 MD |
 | 数据库查询 | `db-query` | 查业务数据 / 核对数据状态；生产只读 |
 | 前端报错 | `frontend-error-diagnose` | 浏览器侧报错，先复现再定位；只诊断不改代码 |
@@ -60,7 +60,7 @@
 | `code-optimize` / `refactor` | 改动范围：小范围局部 vs 结构 / 迁移 / 批量 |
 | `bug-fix` / `code-optimize` | 是缺陷（行为有错）还是优化（行为正常、只是不好） |
 | `doc-sync` / `repo-init` | 对齐既有文档 vs 建立 / 增补指引 |
-| `log-diagnose` / `db-query` / `commit-review` | 任务对象：日志 trace / 业务数据 / 提交 sha |
+| `log-diagnose` / `db-query` / `code-review` | 任务对象：日志 trace / 业务数据 / 提交 sha |
 | `feature-dev` / `doc-sync` | 主体是代码改造还是纯文档 |
 
 ## 填表说明（项目有自定义技能时）

@@ -59,7 +59,7 @@ python skills/db-query/scripts/db-query.py --list-envs                    # 数�
 python skills/db-query/scripts/db-query.py --sql "SELECT ..." --env prod  # 查数（生产只读）
 python skills/log-diagnose/scripts/log-diagnose.py --list-envs            # Kibana：列出环境
 python skills/log-diagnose/scripts/log-diagnose.py <trace_id> 30d --env prod
-python skills/commit-review/scripts/check-commit.py <修订号>              # 提交取数落盘（不做判定）
+python skills/code-review/scripts/review-fetch.py <修订号>              # 评审取数落盘（修订号或 --range 区间，不做判定）
 python skills/check-rule-extract/scripts/build_check_xlsx.py --tasks <片段目录> --out <xlsx> --source "<本册来源>"
 python skills/mr-create/scripts/selftest.py                               # mr-create 自测：38 项用例（改过 prepare-mr.py 必跑）
 python skills/session-summary/scripts/extract-session.py <会话id> --user   # 会话记录抽取（十几 MB，别整份读 transcript）
@@ -90,7 +90,7 @@ python skills/session-summary/scripts/extract-session.py <会话id> --user   # �
 ### 跨技能共用约定（改脚本时别破坏）
 
 - **配置加载顺序**：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/<技能名>.config.json`（脚本从当前工作目录向上逐级查找，实现「不同项目不同环境」）；③ skill 同级默认配置。配置均 gitignored、凭据不入库，按各技能 `references/config.example.json` 模板在本地创建。
-- **产物落盘按配置来源归属**：显式 `--config` → `~/Downloads/`；项目级 → `<项目根>/.tasks/`；全局默认 → `~/.claude/.tasks/`；均可 `--out-dir` 覆盖（`db-query.py` 与 `log-diagnose.py` 均已按此实现）。`.tasks/` 是过程产物目录，**不提交、不入库**（`check-commit.py` 默认落在 `skills/commit-review/.tasks/`）。
+- **产物落盘按配置来源归属**：显式 `--config` → `~/Downloads/`；项目级 → `<项目根>/.tasks/`；全局默认 → `~/.claude/.tasks/`；均可 `--out-dir` 覆盖（`db-query.py` 与 `log-diagnose.py` 均已按此实现）。`.tasks/` 是过程产物目录，**不提交、不入库**（`review-fetch.py` 默认落在 `skills/code-review/.tasks/`）。
 - **`tmp/` 等过程目录默认不固化**：gitignored 的 `tmp/`、`.tasks/` 里的中间脚本（探针、验证器、mock 测试）**默认视作没有固化**——清掉即失、下次会话不保证还在，别把「下次继续用」建立在它们上。但会话中**反复复用**（跨消息 / 跨会话还会再跑）的中间脚本要**视情况固化**：参数化（去掉硬编码的项目路径、凭据）、自包含后入库到项目合适位置（如 `build/tools/`、`scripts/` 对应目录），并在 AGENTS.md / README 登记用法——判据是「换个会话还用得上吗」：用则固化，一次性就随目录消亡。
 - **每个脚本开头都有 `_ensure_utf8()`**：Windows 控制台默认 GBK，统一强制 UTF-8 输出以规避乱码；新增脚本照抄该函数。
 - **安全判定有两份实现，改动必须同步**：`db_common.py` 供 `gen-fix-sql.py` / `run-sql-file.py` / `sync-table.py` 复用；而 `db-query.py` 自包含一份同名逻辑（`find_project_config` / `is_read_only` / 写策略判定）。放宽只读白名单或写拦截要**两处一起改**。

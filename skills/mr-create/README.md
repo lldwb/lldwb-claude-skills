@@ -16,7 +16,7 @@ python <skill 目录>/scripts/prepare-mr.py
 python <skill 目录>/scripts/prepare-mr.py --source <源分支> --target <目标分支>
 ```
 
-**边界**：工作区改动尚未提交、要先落成本地提交用 `commit-create`；只评审已存在的提交或合并请求质量用 `commit-review`。
+**边界**：工作区改动尚未提交、要先落成本地提交用 `commit-create`；只评审已存在的提交或合并请求质量用 `code-review`。
 
 ## 能力
 

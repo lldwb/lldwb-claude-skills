@@ -10,7 +10,7 @@
 
 **输出路径按配置来源决定**（与配置归属一致）：显式 `--config` → `~/Downloads/<env>/`（不拼 `log-diagnosis` 段）；项目级配置 → `<项目根>/.tasks/log-diagnosis/<env>/`；全局默认 → `~/.claude/.tasks/log-diagnosis/<env>/`；可用 `--out-dir <路径>` 覆盖。
 
-**边界**：需要改代码修复诊断出的缺陷用 `bug-fix`；需要核对业务数据状态用 `db-query`（生产只读）；前端（浏览器侧）报错用 `frontend-error-diagnose`；需要评审提交或核对缺陷由哪次提交引入用 `commit-review`。
+**边界**：需要改代码修复诊断出的缺陷用 `bug-fix`；需要核对业务数据状态用 `db-query`（生产只读）；前端（浏览器侧）报错用 `frontend-error-diagnose`；需要评审提交或核对缺陷由哪次提交引入用 `code-review`。
 
 ## 能力
 

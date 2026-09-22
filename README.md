@@ -13,7 +13,7 @@
 | feature-dev | 需求开发全流程：需求分析 → 方案设计（含可行性核证）→ 规划文档（proposal/design/tasks 三件套 + 任务勾选）→ 分层实现 → 端到端实测 → 提交；支持六阶段交互模式（研究 → 构思 → 计划 → 执行 → 优化 → 评审）（纯文档产出转 doc-sync） | references/feasibility-check.md、references/e2e-verify.md、references/plan-doc-template.md |
 | code-optimize | 代码优化（小范围）工作流：SSOT、保持对外行为不变、按 commit-create 口径提交（结构性/分层重构转 refactor） | references/optimize-checklist.md |
 | refactor | 重构（结构改造、对外行为不变）：契约先行（目标形态 + 不可变更项）→ 测试基线 → 改造与审查分离（独立子代理对抗性审查）→ 编译/审查/测试循环验证 → 报告与提交（小范围优化转 code-optimize） | scripts/contract-snapshot.py、references/（契约模板 / 测试基线 / 子代理提示词 / 报告模板） |
-| commit-review | 提交评审：取数落盘 → 探索调用链 → 七维核查（逻辑边界 / 依赖影响面 / 分层耦合 / 契约影响面 / 废弃 API / 风格一致性 / 提交信息），只检查不改代码 | scripts/check-commit.py、references/review-checklist.md |
+| code-review | 代码评审（多对象）：提交评审（修订号取数 → 探索调用链 → 七维核查）、合并评审（分支区间聚合差异 + 提交序列）、模块评审、项目整体评审、架构评审，只检查不改代码 | scripts/review-fetch.py、references/（评审清单×4） |
 | log-diagnose | 日志自动诊断：按 trace_id（或关键词）+ 时间窗从 Kibana 拉日志、六类故障分类法、BUG 时产出双 MD（修复任务 + 事故报告） | scripts/log-diagnose.py、references/config.example.json |
 | db-query | 数据库查询：生产只读（三重保障）、测试写需用户确认，安全铁律（禁 select *、单条语句、控制数据量） | scripts/（db-query / gen-fix-sql / run-sql-file / sync-table / db_common）、references/config.example.json、requirements.txt |
 | module-batch | 多模块并行改造：worktree 隔离 + 并行子代理 + 独立审查 + 合并回主分支，含子代理提示词、收尾报告与失败处置 | references/subagent-prompts.md、references/report-template.md、references/lessons.md |
