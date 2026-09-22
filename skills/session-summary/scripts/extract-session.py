@@ -153,25 +153,38 @@ def command_args(text):
     return text[start:end].strip()
 
 
+def clean_user_text(t, with_summary=False):
+    """一条用户文本是否算用户输入的统一判定，各模式共用：
+
+    去空白、过滤 Caveat 提示；斜杠命令包装（`<command-message>…` 开头）解包出
+    `<command-args>` 的用户参数，无参数则整条丢弃；上下文压缩摘要默认过滤
+    （`with_summary` 时原样返回）。返回 None 表示该条不算用户输入。
+    """
+    t = (t or "").strip()
+    if not t or t.startswith("Caveat:"):
+        return None
+    if t.startswith(("<command-message>", "<command-name>")):
+        t = command_args(t)
+        if not t:
+            return None
+    if is_compression_summary(t):
+        return t if with_summary else None
+    return t
+
+
 def mode_user(path, limit, with_summary=False):
     out, n, skipped = [], 0, 0
     for rec in iter_records(path):
         if rec.get("type") != "user":
             continue
         for t in user_texts(rec):
-            t = (t or "").strip()
-            if not t or t.startswith("Caveat:"):
+            t = clean_user_text(t, with_summary)
+            if t is None:
                 continue
-            if t.startswith(("<command-message>", "<command-name>")):
-                t = command_args(t)
-                if not t:
-                    continue
             if is_compression_summary(t):
                 skipped += 1
-                if with_summary:
-                    out.append("### %s\n%s\n" % (rec.get("timestamp", ""), clip(t, limit)))
-                continue
-            n += 1
+            else:
+                n += 1
             out.append("### %s\n%s\n" % (rec.get("timestamp", ""), clip(t, limit)))
     note = "（已过滤 %d 条上下文压缩摘要，--with-summary 保留）" % skipped if skipped else ""
     return out, "%d 条用户消息%s" % (n, note)
@@ -198,8 +211,8 @@ def mode_timeline(path, limit):
         ts = (rec.get("timestamp") or "")[11:19]
         if kind == "user":
             for t in user_texts(rec):
-                t = (t or "").strip()
-                if not t or t.startswith("Caveat:") or t.startswith("<"):
+                t = clean_user_text(t)
+                if t is None:
                     continue
                 n_user += 1
                 out.append("\n@@@@ [USER %s] %s" % (ts, clip(t, limit)))
