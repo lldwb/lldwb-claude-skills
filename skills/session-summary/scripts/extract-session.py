@@ -178,6 +178,12 @@ def mode_user(path, limit, with_summary=False):
         if rec.get("type") != "user":
             continue
         for t in user_texts(rec):
+            if not with_summary and is_compression_summary((t or "").strip()):
+                # 默认过滤的摘要也要计入 skipped，否则「已过滤 N 条」提示
+                # 对其服务的默认模式永远是 0（clean_user_text 返回 None 后
+                # 直接 continue，计数发生在不了那条路径上）。
+                skipped += 1
+                continue
             t = clean_user_text(t, with_summary)
             if t is None:
                 continue
@@ -186,7 +192,11 @@ def mode_user(path, limit, with_summary=False):
             else:
                 n += 1
             out.append("### %s\n%s\n" % (rec.get("timestamp", ""), clip(t, limit)))
-    note = "（已过滤 %d 条上下文压缩摘要，--with-summary 保留）" % skipped if skipped else ""
+    if skipped:
+        note = ("（已过滤 %d 条上下文压缩摘要，--with-summary 保留）" % skipped
+                if not with_summary else "（含 %d 条上下文压缩摘要）" % skipped)
+    else:
+        note = ""
     return out, "%d 条用户消息%s" % (n, note)
 
 
