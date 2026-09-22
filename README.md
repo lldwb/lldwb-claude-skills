@@ -36,7 +36,7 @@
 | git-history-rewrite | 历史改写：备份分支 → 方案先行 → rebase 拆分 / 改类型 / 重排 / 删除 → 时间恢复 → 重打 tag → 四重验证 → 确认后强推 | references/（lessons.md、index-filter.sh 模板） |
 | session-summary | 会话总结与 skills 迭代：取证 → 总结 → 审视技能优化点（价值 / 成本 / 建议）→ 确认后实施；会话在别的项目仓库时，一并把实证教训回流进那个仓库的 `AGENTS.md` | scripts/extract-session.py |
 | app-packaging | 打包与分发：产物形态决策（裸目录 / zip / 单文件可执行 / 安装包）→ 运行时依赖盘点 → 跨平台构建边界（什么必须对应平台 runner）→ CI matrix 构建与 Release 附件分发 → 版本注入与校验和，产物在干净环境实测 | references/（Node SEA / CI 分发）、assets/（workflow 模板、SEA 配置） |
-| skill-router | 技能路由判断：任务描述无法唯一确定技能时，盘点可用技能、按任务特征归类、用各技能 description 边界排除，AI 判断给出推荐 + 理由 + 备选，只判断不执行（查规范章节转 spec-route） | references/skill-catalog-template.md |
+| skill-router | 技能路由判断：任务描述无法唯一确定技能时，盘点可用技能、按任务特征归类、用各技能 description 边界排除，AI 判断给出推荐 + 理由 + 备选，末尾附可复制的派发指令（按目标技能输入格式优化用户原话），只判断不代执行（查规范章节转 spec-route） | references/skill-catalog-template.md |
 
 ## 目录结构
 
