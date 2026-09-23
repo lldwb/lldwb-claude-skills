@@ -72,6 +72,11 @@ curl -sL -H "Authorization: Bearer $CRED" \
 - 上传过程中游 502 可能留下 `state: starter` 的空附件，需删除后重传；
 - 若项目已有自己的 Release 正文来源（如由 CHANGELOG 生成），上传步骤**只传附件、别让 CI 重建 Release 正文**——否则与既有正文互相覆盖。
 
+## 长编译与缓存的坑
+
+- **缓存按 ref 作用域**：tag push 触发的 run 恢复不了非默认分支建的缓存（日志 `Cache not found for input keys: …`）——特性分支上试跑得再热，tag 一打全 miss、全量重编。要让发版构建快：打 tag 前在**默认分支**上 `workflow_dispatch` 跑一次构建预热缓存（默认分支的缓存对所有 run 可访问）。反向有利的一面：缓存按 ref 字符串作用域，**同 tag 重打（删远端 tag → 重打 → 重推）触发的新 run 能命中上一次 run 建的缓存**——tag 移位修发版缺陷的重跑成本接近零；
+- **长编译 job 的「停摆」判定与处置**：编译类 job 随机整机静默停摆是托管 runner 的已知故障模式（如 actions/runner-images#13882：macOS x86_64 runner 的 C++ 编译随机停摆——无报错、无 OOM、日志不再增长），与 workflow 改动无关。**判定不看步总时长（本来就长），看日志增长节奏**：下载 job 日志对比两次的字节数与末行 UTC 时间戳，与同 job 历史日志的健康节奏对照（健康编译相邻输出间隔通常以秒计）；跨多次采样字节完全不动才算实锤——超大编译单元也可能十几分钟不吐日志后自愈。处置：确认冻结 → `POST /actions/runs/{id}/cancel` → 等 completed → `POST /actions/runs/{id}/rerun-failed-jobs` 只重跑失败 job。三个约束：**cancel 是 run 级**（没有单 job 取消），先等健康 job 全部 success 再动手，否则它们也被取消、进 rerun 集合白跑；`timeout` 看门狗对整机停摆无效（timeout 进程随 VM 一起冻死，到点不触发）；**rerun-failed-jobs 沿用旧 commit 的 workflow**——修 workflow 缺陷必须推新提交另起 run（tag 触发的发版 run 走删 tag 重打，配合上一条的缓存复用，重跑成本接近零）。
+
 ## 校验和
 
 构建后生成 `SHA256SUMS`（每产物一行），**与产物一并上传**（附件或制品），并在下载说明里写明核对方式。这是「产物被完整下载」的唯一证据。

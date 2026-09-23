@@ -67,7 +67,7 @@ signtool sign /fd SHA256 <产物名>.exe                   # Windows：可选，
 
 ## 平台支持与交叉构建
 
-**官方常态测试的平台**：Windows；**macOS 仅 arm64**（x64 未支持）；Linux（除 Alpine、除 s390x）。目标平台不在此列时先小样验证，别直接排产。
+**官方常态测试的平台**：Windows；**macOS 仅 arm64**（x64 未支持）；Linux（除 Alpine、除 s390x）。目标平台不在此列时先小样验证，别直接排产。macOS x64 除不获官方测试外，**自编译基底**注入后还会撞 dyld 坏档（见下方已知坑第一条），基底选择与链接器旗标按那条处理。
 
 **交叉构建可以做**，靠配置里的 `executable` 指向**目标平台的 node 二进制**：
 
@@ -106,6 +106,8 @@ signtool sign /fd SHA256 <产物名>.exe                   # Windows：可选，
 ## 已知坑
 
 - **linux arm64 容器里注入会产出坏 ELF**：postject 在 linux arm64 的 docker 容器内运行，产物的哈希表不正确，加载原生模块时崩溃（nodejs/postject #105）——换非容器的 linux arm64 环境或换平台构建；
+- **macOS x64 注入后 dyld 报 `unsupported thread-local, larger than 4GB`（自编译基底实测）**：上游已知坏档（nodejs/node#59553，官方对 Intel macOS 的 SEA 选择文档化为不支持而不修）——Xcode 15+ 新式链接器产出的 x64 二进制经 postject 注入后损坏，同一环境官方 node 基底（老链接器产物）注入无恙；该 dyld 报错在 Rosetta 下同样复现，CI 上跑 x64 产物自检能可靠拦住它。绕法：自编译 x64 基底时走经典链接器（macOS 上给 make 透传 `LDFLAGS=-Wl,-ld_classic`，node 的 gyp 链接命令会消费该环境变量），或直接换官方 x64 node 当基底；
+- **postject 的哨兵串必须带状态位**：`--sentinel-fuse` 埋进二进制的串本体后必须紧跟 `:` 与初始状态位（官方格式 `NODE_SEA_FUSE_…:0`，注入时 postject 把 `0` 置 `1`）——只埋本体、后跟 NUL 时注入报「fuse must be ':'」；其报错构造路径还对 Buffer 里的数字调 `charCodeAt` 二次崩溃，把真实原因掩盖成 `buffer[colonIndex].charCodeAt is not a function`（表象像「一解析 x64 Mach-O 就崩」，读 postject 源码的冒号校验段可确认）。写注入自检 / hello-world 验证时按官方三段格式埋串，见到 charCodeAt 报错先查哨兵串格式；
 - **Windows 产物名必须带 `.exe`**（配置的 `output` 与复制出的底座文件名都一样）；
 - **忘了重新签名**：macOS 上表现为产物直接无法运行，Windows 上只是持续的安全告警；
 - **把源码入口当 `main`**：直接注入未打包的多文件入口，运行时报「找不到模块」——入口必须先打包成单文件。
