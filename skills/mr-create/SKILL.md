@@ -1,6 +1,6 @@
 ---
 name: mr-create
-description: 生成合并请求（MR/PR）的标准工作流。当用户要求"生成合并请求""把当前分支提个 MR / PR""按指定源分支和目标分支建 MR 并自动写描述""这条分支帮我提 PR"时使用——先解析并校验源/目标分支（存在性、同一提交、有效差异，防空合并请求），再综合用户补充说明与该分支相对目标分支的提交记录自动生成四段式描述，用户确认后经 gh / glab 创建（无 CLI 时输出描述与手工创建链接，并可按需推送源分支）。即使未明确说"用 skill"，只要涉及提 MR / PR、生成合并请求描述、把已提交的分支送审就应使用。边界：工作区改动尚未提交时先提交用 commit-create；只评审已存在的提交或合并请求质量用 code-review。本技能不合并、不删分支、不改代码、不 --force。
+description: 生成合并请求（MR/PR）的标准工作流。当用户要求"生成合并请求""把当前分支提个 MR / PR""按指定源分支和目标分支建 MR 并自动写描述""这条分支帮我提 PR"时使用——先解析并校验源/目标分支（存在性、同一提交、有效差异，防空合并请求），再综合用户补充说明与该分支相对目标分支的提交记录自动生成四段式描述，用户确认后经 gh / glab 创建（无 CLI 时先走 git credential 令牌 + 平台 API 直建，不通再退输出描述与手工创建链接，并可按需推送源分支）。即使未明确说"用 skill"，只要涉及提 MR / PR、生成合并请求描述、把已提交的分支送审就应使用。边界：工作区改动尚未提交时先提交用 commit-create；只评审已存在的提交或合并请求质量用 code-review。本技能不合并、不删分支、不改代码、不 --force。
 ---
 
 # 生成合并请求（MR/PR）
@@ -73,7 +73,16 @@ description: 生成合并请求（MR/PR）的标准工作流。当用户要求"�
 - **GitLab（`glab`）**：`glab mr create --source-branch <源> --target-branch <目标> --title "<标题>" --description-file <描述文件> --yes`
   - **不要用 `--fill`**：它会顺带推送分支并用提交信息覆盖描述
   - `--description-file` 不可用（旧版本）时退回 `-d "$(cat <描述文件>)"`
-- **无 CLI / 未识别平台**：输出描述全文与素材中的 `手工创建页` 链接（GitHub `compare` / GitLab `merge_requests/new`），由用户手工创建；不自行猜测其他平台的参数。
+- **无 CLI / 未识别平台**：分两步兜底——
+  - **GitHub 平台先走 API 直建**（token 取 git 推送凭据，只进命令、不落盘不打印；描述文件组装成 JSON 再发，避免多行中文在 shell 里转义出错）：
+    ```bash
+    node -e "const fs=require('fs');fs.writeFileSync('pr-body.json',JSON.stringify({title:process.argv[1],head:process.argv[2],base:process.argv[3],body:fs.readFileSync(process.argv[4],'utf8')}))" "<标题>" <源分支> <目标分支> <描述文件>
+    CRED=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill 2>/dev/null | sed -n 's/^password[=]//p')
+    curl -s -X POST -H "Authorization: Bearer $CRED" -H "Accept: application/vnd.github+json" \
+      "https://api.github.com/repos/<owner>/<repo>/pulls" -d @pr-body.json
+    ```
+    响应含 `html_url` 即建成（向用户汇报链接后清理 `pr-body.json`）；401 / 403 / 404 / 422 再退手工链接兜底。该通道不依赖 `gh`，只要求 git 能推（`gh` 缺失而 git 可推的机器上是首选兜底；MCP GitHub 工具令牌权限不足时同样可用）。
+  - **API 不通 / 未识别平台**：输出描述全文与素材中的 `手工创建页` 链接（GitHub `compare` / GitLab `merge_requests/new`），由用户手工创建；不自行猜测其他平台的参数。
 
 标题走命令行参数、描述走文件：**描述一律用 `--body-file` / `--description-file` 传文件**（多行文本、中文、引号在命令行里易被转义或编码破坏，Windows 控制台尤其明显）；标题用双引号包裹并**避免标题里再出现双引号**，含复杂符号时先与用户确认措辞。
 

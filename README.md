@@ -22,7 +22,7 @@
 | unit-test | 单元测试：生成（覆盖分支与边界、可运行可通过）/ 修复失败（默认不自行执行，交用户验证） | references/test-design-checklist.md |
 | doc-sync | 文档与代码同步：由文档定位代码确认变更 → 更新 / 修正偏差，子代理复核一致性（事实源不限于代码；代码改造转 feature-dev） | references/verify-agent.md |
 | commit-create | 提交 git 改动（提交环节 SSOT）：单一职责拆分、显式 add、中文提交信息（标题/正文空行 + 提交后结构复核），不自动 push；可选 emoji 前缀 / 显式 type·scope / 仅 Git 轻量路径 / `--amend`（限未推送分支） | — |
-| mr-create | 合并请求（MR/PR）生成：分支校验（防空 MR）→ 四段式描述自动生成 → 确认后经 gh/glab 创建，无 CLI 时输出描述与手工创建链接 | scripts/（prepare-mr / selftest） |
+| mr-create | 合并请求（MR/PR）生成：分支校验（防空 MR）→ 四段式描述自动生成 → 确认后经 gh/glab 创建，无 CLI 时走 API 直建、再退手工创建链接 | scripts/（prepare-mr / selftest） |
 | comment-supplement | 注释补齐与修正：补全缺失 + 修正失效描述，仅注释层面，不确定项交用户确认（与代码改动并存时用 bug-fix） | references/comment-checklist.md |
 | project-explain | 项目讲解：结合项目真实代码逐项讲清概念（引用真实位置），结尾说明项目定位 | references/explain-outline.md |
 | repo-init | 仓库指引初始化（`/init` 的等价实现）：正文写入 AGENTS.md（唯一权威源、与既有内容合并），CLAUDE.md 仅作指向；先核实再断言，异常只记录上交 | references/output-templates.md |
