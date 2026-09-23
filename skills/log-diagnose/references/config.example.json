@@ -11,7 +11,8 @@
       "index_pattern": "filebeat-<app>-prod-*",
       "default_days": 30,
       "max_hits": 2000,
-      "page_size": 300
+      "page_size": 300,
+      "timeout": 120
     },
     "test": {
       "name": "测试环境",
@@ -23,7 +24,8 @@
       "index_pattern": "filebeat-<app>-test-*",
       "default_days": 30,
       "max_hits": 2000,
-      "page_size": 300
+      "page_size": 300,
+      "timeout": 120
     }
   }
 }

@@ -5,7 +5,8 @@
 只负责按 trace_id + 时间窗拉取并解析日志，不做 bug 判定（判定由调用方 agent 完成）。
 
 多环境: 通过 --env <环境名> 选择（缺省取配置 default_env）。
-config 结构: { "default_env": "prod", "environments": { "<env>": { kibana / index_pattern / ... } } }
+config 结构: { "default_env": "prod", "environments": { "<env>": { kibana / index_pattern / timeout / ... } } }
+环境级可选字段 timeout: 单次 HTTP 超时秒数，缺省 120；超时自动重试一次，连续超时请调大或改用降级路径。
 
 用法:
     python log-diagnose.py <trace_id> [time] [--env test] [--config <path>] [--out-dir <path>]
@@ -29,6 +30,7 @@ import re
 import argparse
 import urllib.request
 import urllib.error
+import socket
 import base64
 import codecs
 
@@ -249,19 +251,34 @@ def search_es(cfg, kws, gte, lte):
     }
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
     url = host.rstrip("/") + "/internal/search/es"
-    req = urllib.request.Request(url, data=data, method="POST")
-    req.add_header("Content-Type", "application/json")
-    req.add_header("kbn-xsrf", "true")
-    cred = "%s:%s" % (cfg["kibana"]["username"], cfg["kibana"]["password"])
-    req.add_header("Authorization", "Basic " + base64.b64encode(cred.encode("utf-8")).decode("ascii"))
+    timeout = int(cfg.get("timeout", 120))
+
+    def _request():
+        req = urllib.request.Request(url, data=data, method="POST")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("kbn-xsrf", "true")
+        cred = "%s:%s" % (cfg["kibana"]["username"], cfg["kibana"]["password"])
+        req.add_header("Authorization", "Basic " + base64.b64encode(cred.encode("utf-8")).decode("ascii"))
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read().decode("utf-8")
+
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            raw = resp.read().decode("utf-8")
+        try:
+            raw = _request()
+        except urllib.error.HTTPError:
+            raise  # 已有响应的 4xx/5xx 不重试
+        except (urllib.error.URLError, socket.timeout) as e:
+            reason = getattr(e, "reason", e)
+            print("警告: 请求超时或连接异常(%s)，%ss 超时下自动重试一次..." % (reason, timeout),
+                  file=sys.stderr)
+            raw = _request()
     except urllib.error.HTTPError as e:
         body_txt = e.read().decode("utf-8", errors="replace")
         die("ES 返回 HTTP %s: %s" % (e.code, body_txt[:1000]))
-    except urllib.error.URLError as e:
-        die("无法连接 Kibana: %s" % e.reason)
+    except (urllib.error.URLError, socket.timeout) as e:
+        reason = getattr(e, "reason", e)
+        die("无法连接 Kibana（单次超时 %ss、重试后仍失败；慢查询可调大环境配置 timeout 字段，"
+            "或走脚本外的降级路径，见 SKILL.md 注意事项）: %s" % (timeout, reason))
     try:
         obj = json.loads(raw)
     except Exception:

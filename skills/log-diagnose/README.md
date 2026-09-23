@@ -1,10 +1,10 @@
 # log-diagnose
 
-日志自动诊断：按 trace_id + 时间窗从 Kibana（多环境，`--env` 切换）拉取日志，六类故障分类法定位错误根因；判定为 BUG（含查询超时引发报错）时产出修复任务 MD 与独立事故报告 MD 两份文档，不自动派发。
+日志自动诊断：按 trace_id（或 `--kw` 关键词/业务单号）+ 时间窗从 Kibana（多环境，`--env` 切换）拉取日志，六类故障分类法定位错误根因；判定为 BUG（含查询超时引发报错）时产出修复任务 MD 与独立事故报告 MD 两份文档，处置涉及数据回补时追加数据恢复说明 MD，不自动派发。
 
 ## 使用
 
-用户给出 trace_id / 日志片段要求排查线上问题、定位错误根因、判断是否 bug 时自动触发；也可显式要求"用 log-diagnose skill 排查这个 trace"。
+用户给出 trace_id / 日志片段 / 业务单号（单据号、订单号等）要求排查线上问题、定位错误根因、判断是否 bug 时自动触发；也可显式要求"用 log-diagnose skill 排查这个 trace"。
 
 首次使用先在本地创建配置（含 Kibana 地址与凭据，不入库）：按加载顺序取 ① `--config <路径>`；② 项目级 `<项目根>/.claude/log-diagnose.config.json`（脚本从当前工作目录向上查找）；③ skill 同级默认 `log-diagnose.config.json`；模板见 `references/config.example.json`。
 
@@ -14,10 +14,10 @@
 
 ## 能力
 
-- 取数：`scripts/log-diagnose.py <trace_id> <time> [--env ...]`（Kibana internal search API；只取数、解析、落盘，不替 agent 下结论）
+- 取数：`scripts/log-diagnose.py <trace_id|无> <time> [--kw <关键词>]... [--env ...]`（Kibana internal search API；`--kw` 可多次、AND 组合、可与 trace_id 同给，适合按业务单号检索；只取数、解析、落盘，不替 agent 下结论）
 - 六类分类法：BUG / 业务阻断 / 权限阻断 / 工作流阻断（unwrap 到 BUG 类 cause 可升格）/ 基础设施性能 / 第三方系统失败
 - 查询超时（`QueryTimeoutException`、DB 侧取消）已抛错阻断请求 → 判为 BUG；未触发超时、无报错的慢 SQL 仅提示优化
-- 判定为 BUG 才产出两份 MD（修复任务 + 独立事故报告），全程不自动派发
+- 判定为 BUG 才产出两份 MD（修复任务 + 独立事故报告），处置涉及本系统数据回补时追加数据恢复说明 MD（六要素：情况说明 / 字段值溯源 SQL / 恢复前校验 / 事务建议 / 恢复后待办 / 风险确认；只产出 SQL 文档、不执行写库），全程不自动派发
 - 根因必须核对涉及代码当时的 commit（工作区与线上不一致时以线上版本为准并注明）
 - 数据佐证：根因涉及业务数据时用 `db-query` 只读查库核对
 - 第三方系统调用失败必须给出三要素：调用地址、请求体、响应体
