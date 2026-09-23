@@ -383,6 +383,34 @@ def C18_默认落盘到_tasks():
         shutil.rmtree(d, ignore_errors=True)
 
 
+@wrap_case
+def C19_task通知不计入用户输入():
+    """task-notification 是后台任务跨会话残留注入 user turn 的系统通知，
+    非用户直发——--user 统计与 --timeline 的 USER 行都不该收录它
+    （回归口径：实测 40 条目中 19 条通知，不过滤统计近半失真）。"""
+    d = tempfile.mkdtemp(prefix="ss-")
+    try:
+        notice = ("<task-notification>\n<task-id>b2rmvc7o1</task-id>\n"
+                  "<status>stopped</status>\n<summary>后台命令未跑完</summary>\n"
+                  "</task-notification>")
+        recs = [urec(notice, ts="2026-09-22T04:32:20.464Z"),
+                urec("继续", ts="2026-09-22T04:32:20.529Z")]
+        p = write_session(recs, d)
+        r = run([p, "--user", "--stdout"])
+        check(r.returncode == 0, "退出码 %s" % r.returncode)
+        check("b2rmvc7o1" not in r.stdout and "后台命令未跑完" not in r.stdout,
+              "通知内容混入用户消息: %s" % r.stdout)
+        check("继续" in r.stdout and "[user] 1 条用户消息" in r.stdout,
+              "--user 统计错误: %s" % r.stdout)
+        r2 = run([p, "--timeline", "--stdout"])
+        check(r2.returncode == 0, "timeline 退出码 %s" % r2.returncode)
+        check("[USER" in r2.stdout and r2.stdout.count("[USER") == 1,
+              "时间线 USER 行混入通知: %s" % r2.stdout)
+        check("用户 1 条" in r2.stdout, "时间线统计错误: %s" % r2.stdout)
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
 def main():
     print("session-summary 自测：%d 个用例" % len(RESULTS))
     fail = 0

@@ -156,12 +156,14 @@ def command_args(text):
 def clean_user_text(t, with_summary=False):
     """一条用户文本是否算用户输入的统一判定，各模式共用：
 
-    去空白、过滤 Caveat 提示；斜杠命令包装（`<command-message>…` 开头）解包出
-    `<command-args>` 的用户参数，无参数则整条丢弃；上下文压缩摘要默认过滤
-    （`with_summary` 时原样返回）。返回 None 表示该条不算用户输入。
+    去空白、过滤 Caveat 提示与 task-notification 系统通知（后台任务跨会话
+    残留注入 user turn，非用户直发——实测 40 条里 19 条，不过滤统计近半失真）；
+    斜杠命令包装（`<command-message>…` 开头）解包出 `<command-args>` 的用户
+    参数，无参数则整条丢弃；上下文压缩摘要默认过滤（`with_summary` 时原样
+    返回）。返回 None 表示该条不算用户输入。
     """
     t = (t or "").strip()
-    if not t or t.startswith("Caveat:"):
+    if not t or t.startswith(("Caveat:", "<task-notification>")):
         return None
     if t.startswith(("<command-message>", "<command-name>")):
         t = command_args(t)
