@@ -250,6 +250,7 @@ def C10_timeline基础渲染与计数():
         p = write_session(recs, d)
         r = run([p, "--timeline", "--stdout"])
         check(r.returncode == 0, "退出码 %s" % r.returncode)
+        check("UTC 时刻，非本地时间" in r.stdout, "时间线头部缺 UTC 标注: %s" % r.stdout)
         check("@@@" in r.stdout and "时间线用户消息" in r.stdout, "用户行缺失: %s" % r.stdout)
         check(">>Edit[" in r.stdout and "foo.py" in r.stdout, "工具行或文件名缺失: %s" % r.stdout)
         check("long/path" not in r.stdout, "Edit 行应只留 basename: %s" % r.stdout)
@@ -290,6 +291,7 @@ def C12_transcript各块标记():
         p = write_session(recs, d)
         r = run([p, "--transcript", "--stdout"])
         check(r.returncode == 0, "退出码 %s" % r.returncode)
+        check("UTC 时刻，非本地时间" in r.stdout, "转录头部缺 UTC 标注: %s" % r.stdout)
         for mark in ("[SUMMARY] 压缩续接摘要", "[THINK]", "[TOOL_USE #1] Bash", "[TEXT] 结论",
                      "[TOOL_RESULT] 输出行", "<SIDECHAIN>"):
             check(mark in r.stdout, "标记 %r 缺失: %s" % (mark, r.stdout))
@@ -371,14 +373,19 @@ def C17_自定义落盘路径():
 
 
 @wrap_case
-def C18_默认落盘到_tasks():
+def C18_未指定out直接打印不落盘():
+    # 缺省直接打印：复核/审查类只读用途不得在调用方不知情时写文件；
+    # 落盘必须显式 --out（C17 覆盖）。
     d = tempfile.mkdtemp(prefix="ss-")
     try:
-        p = write_session([urec("默认路径")], d)
+        p = write_session([urec("缺省打印内容")], d)
         r = run([p, "--user"], cwd=d)
         check(r.returncode == 0, "退出码 %s" % r.returncode)
-        expected = os.path.join(d, ".tasks", "session-extract", "s-user.md")
-        check(os.path.isfile(expected), "默认落盘文件缺失: %s" % expected)
+        check("缺省打印内容" in r.stdout, "未指定 --out 应直接打印: %s" % r.stdout)
+        check(not os.path.exists(os.path.join(d, ".tasks")),
+              "未显式 --out 不应落盘 .tasks 目录")
+        r2 = run([p, "--user", "--stdout"])
+        check(r2.returncode == 0 and "缺省打印内容" in r2.stdout, "--stdout 兼容路径失效")
     finally:
         shutil.rmtree(d, ignore_errors=True)
 

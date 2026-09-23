@@ -217,7 +217,8 @@ def mode_assistant(path, limit, tail):
 
 
 def mode_timeline(path, limit):
-    out, n_user, n_ai, n_tool = [], 0, 0, 0
+    out = ["（时间戳取自会话记录的 UTC 时刻，非本地时间）"]
+    n_user, n_ai, n_tool = 0, 0, 0
     for rec in iter_records(path):
         kind = rec.get("type")
         ts = (rec.get("timestamp") or "")[11:19]
@@ -246,7 +247,8 @@ def mode_timeline(path, limit):
 
 
 def mode_transcript(path, limit):
-    out, n_tool, n = [], 0, 0
+    out = ["（时间戳取自会话记录的 UTC 时刻，非本地时间）"]
+    n_tool, n = 0, 0
     for rec in iter_records(path):
         kind = rec.get("type")
         if kind == "summary":
@@ -313,8 +315,8 @@ def main():
     ap.add_argument("--transcript", action="store_true", help="紧凑全文转录")
     ap.add_argument("--limit", type=int, default=None,
                     help="单条消息截断字数（0 = 不截断；缺省 user 不截断、assistant 2500、timeline 900）")
-    ap.add_argument("--out", help="落盘文件（缺省 <当前目录>/.tasks/session-extract/<模式>.md）")
-    ap.add_argument("--stdout", action="store_true", help="直接打印，不落盘")
+    ap.add_argument("--out", help="落盘文件（显式指定才写盘；未指定时直接打印）")
+    ap.add_argument("--stdout", action="store_true", help="直接打印，不落盘（与缺省行为一致，兼容保留）")
     args = ap.parse_args()
 
     chosen = []
@@ -353,13 +355,14 @@ def main():
         print("阻塞: %s 里没有可抽取的 %s 内容" % (os.path.basename(path), mode))
         return 1
 
-    if args.stdout:
+    if args.stdout or not args.out:
+        # 缺省直接打印：复核/审查类只读用途不该在调用方不知情时写文件，
+        # 落盘必须显式 --out。
         print(body)
         print("\n[%s] %s" % (mode, summary))
         return 0
 
-    out = args.out or os.path.join(os.getcwd(), ".tasks", "session-extract",
-                                   "%s-%s.md" % (os.path.basename(path)[:-6], mode))
+    out = args.out
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         f.write(body + "\n")
