@@ -1,12 +1,16 @@
 #!/bin/sh
 # 推送前校验版本与 tag 一致性（本地三项：版本号三处一致 / 注解 tag 存在 / tag 在当前分支可达），
-# 不通过则拒绝推送。版本号的分级选取见 AGENTS.md「架构」第 4 条；本钩子只校验一致性、不定级。
+# 不通过则拒绝推送。版本号的分级选取见 AGENTS.md「架构」第 5 条；本钩子只校验一致性、不定级。
 #
 # 启用（每 clone 一次）: git config core.hooksPath .githooks
 # 临时跳过:            git push --no-verify
 #
-# 设计取舍：校验不通过时拦截（fail-closed）；但环境缺少 python 时放行（fail-open），
+# 设计取舍：校验不通过时拦截（fail-closed）；但环境缺少可用的 python 时放行（fail-open），
 # 避免因环境问题把正常推送卡死。--remote（远程校验）需网络，不放进钩子。
+#
+# 解释器探测以「能跑通」为准、不以「命令存在」为准：Windows 上 `python` 可能命中
+# Microsoft Store 的应用执行别名——命令存在但执行即失败（非零退出、零输出），
+# `command -v` 分辨不出来。故对候选逐个试跑 `-c pass`，取第一个真能执行的。
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 [ -f "$root/check-version.py" ] || exit 0
@@ -14,11 +18,50 @@ root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 # 读掉 git 传入的待推送 ref 列表，避免上游写入时 broken pipe
 cat > /dev/null 2>&1 || true
 
-if command -v python >/dev/null 2>&1; then
-    exec python "$root/check-version.py"
+py=""
+broken=""
+for cand in python python3 python3.12; do
+    command -v "$cand" >/dev/null 2>&1 || continue
+    if "$cand" -c pass >/dev/null 2>&1; then
+        py="$cand"
+        break
+    fi
+    broken="${broken:+$broken, }$cand"
+done
+
+# 兜底：uv 管理的 Python（装了 uv 但可执行文件未进 PATH 时）
+if [ -z "$py" ] && command -v uv >/dev/null 2>&1; then
+    uv_py=$(uv python find --no-project 2>/dev/null) || uv_py=""
+    if [ -n "$uv_py" ] && "$uv_py" -c pass >/dev/null 2>&1; then
+        py="$uv_py"
+    fi
 fi
-if command -v python3 >/dev/null 2>&1; then
-    exec python3 "$root/check-version.py"
+
+if [ -z "$py" ]; then
+    if [ -n "$broken" ]; then
+        echo "[pre-push] python 命令存在却无法执行（$broken）——常见于 Windows 的 Microsoft Store 应用执行别名；跳过版本与 tag 校验" >&2
+    else
+        echo "[pre-push] 未找到可用的 python，跳过版本与 tag 校验" >&2
+    fi
+    exit 0
 fi
-echo "[pre-push] 未找到 python/python3，跳过版本与 tag 校验" >&2
+
+# 0 = 校验通过；1 = 校验不通过（原因由脚本自己打印）；其他 = 脚本异常
+out=$("$py" "$root/check-version.py" 2>&1)
+rc=$?
+if [ -n "$out" ]; then
+    printf '%s\n' "$out" >&2
+else
+    echo "[pre-push] 校验脚本零输出（解释器 $py，退出码 $rc），结果无法确认，放行（fail-open）" >&2
+    exit 0
+fi
+
+if [ "$rc" -eq 0 ]; then
+    exit 0
+fi
+if [ "$rc" -eq 1 ]; then
+    echo "[pre-push] 版本与 tag 校验不通过，已拦截本次推送（确需跳过用 git push --no-verify）" >&2
+    exit 1
+fi
+echo "[pre-push] 校验脚本异常退出（解释器 $py，退出码 $rc），放行（fail-open）" >&2
 exit 0
