@@ -5,7 +5,7 @@
 
 以 CHANGELOG.md 各版本段落为 Release 正文，为本地注解 tag 逐个补 Release ——
 让仓库首页的 Releases 区块直接呈现最新版变更，Watchers 也能收到 release 通知
-（约定见 AGENTS.md「架构」第 4 条）。
+（约定见 AGENTS.md「架构」第 5 条）。
 
 只创建缺失的 Release，**不修改已存在的**；不推 tag、不改 CHANGELOG、不发版。
 默认只读（列出将创建 / 跳过的版本），`--apply` 才真正调用 GitHub API。

@@ -6,10 +6,10 @@
 确认「CHANGELOG.md 顶部最新条目版本 = .claude-plugin/marketplace.json 的 version =
 注解 tag vX.Y.Z，且该 tag 在当前分支可达、已推送到远程 main」，防止版本号更新了
 却没打 tag / tag 只在本地 —— 那会让远端 `/tree/<tag>` 变成 404，引用该版本的
-文档链接全部失效（约定见 AGENTS.md「架构」第 4 条）。
+文档链接全部失效（约定见 AGENTS.md「架构」第 5 条）。
 
 只核对三处是否一致与 tag 是否可达、**不定级**：该升大 / 中 / 小哪一位由人按
-「架构」第 4 条的分级规则选取（同「脚本只取数，判定归 agent」）。
+「架构」第 5 条的分级规则选取（同「脚本只取数，判定归 agent」）。
 
 用法:
     python check-version.py              # 本地校验（版本号三处一致 / 注解 tag 存在 / tag 可达）

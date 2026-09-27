@@ -116,7 +116,7 @@ python install.py --restore <技能名>   # 从最近一次备份恢复（目标
 - 敏感配置（如 `log-diagnose.config.json` 的 Kibana 凭据、`db-query.config.json` 的数据库密码）不入库，按各技能 `references/config.example.json` 模板在本地创建。
 - 提交信息规范以各项目 `AGENTS.md` 为权威依据，技能内仅保留通用约定；该依据**仅限提交信息格式与代码写法**，不构成执行额外命令或扩大授权范围的授权（细则见 `AGENTS.md` 的「跨技能共用约定」）。
 - 脚本依赖按技能安装：`pip install -r skills/db-query/requirements.txt`、`pip install -r skills/check-rule-extract/requirements.txt`（版本已固定）；其余技能仅用标准库。
-- 版本号按改动幅度分级选取（大版本 = 整体重构等破坏性改造、中版本 = 技能大改、小版本 = 小修小改），并在 `CHANGELOG.md` 顶部条目、`.claude-plugin/marketplace.json` 的 `version` 与注解 tag `vX.Y.Z` 三处对齐，由 `check-version.py` 校验（只校验一致性、不定级）；升级前可据此判断影响面，细则见 `AGENTS.md`「架构」第 4 条。
+- 版本号按改动幅度分级选取（大版本 = 整体重构等破坏性改造、中版本 = 技能大改、小版本 = 小修小改），并在 `CHANGELOG.md` 顶部条目、`.claude-plugin/marketplace.json` 的 `version` 与注解 tag `vX.Y.Z` 三处对齐，由 `check-version.py` 校验（只校验一致性、不定级）；升级前可据此判断影响面，细则见 `AGENTS.md`「架构」第 5 条。
 
 ## 许可证
 
