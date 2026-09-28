@@ -383,7 +383,11 @@ def main():
     if trace_id:
         kws.insert(0, trace_id)
     display = " | ".join(kws)
-    name = slugify(display)
+    # 产物名带时间窗标识：同关键词不同窗口的查询落盘不互相覆盖（同关键词 7d→36h 复查曾覆盖前次 raw.json 丢失原始数据）
+    base = slugify(display)
+    win = slugify(gte)
+    room = 80 - len(win) - 1
+    name = base[:room].rstrip("._") + "." + win if room > 0 else base
     t0 = time.time()
     hits, total = search_es(env_cfg, kws, gte, lte)
     elapsed = time.time() - t0

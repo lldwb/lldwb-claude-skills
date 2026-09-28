@@ -27,7 +27,7 @@ description: 日志自动诊断 — 按 trace_id（或 --kw 关键词/业务单�
 
 ## 要求
 
-1. **先取数再判定**：任何结论必须建立在脚本落盘的日志产物（`<trace_id>.summary.txt` / `<trace_id>.raw.json`）之上；未取数不下结论，不凭异常名臆断。
+1. **先取数再判定**：任何结论必须建立在脚本落盘的日志产物（`<query>.<时间窗>.summary.txt` / `<query>.<时间窗>.raw.json`）之上；未取数不下结论，不凭异常名臆断。
 2. **脚本只取数、判定归你**：取数脚本只按 trace_id + 时间窗拉取与解析，**不替你做 bug 判定**；分类与归因由你推理完成，不要让脚本替你下结论。
 3. **证据说话**：每条判定都能指回具体日志行（时间戳、级别、message 片段、stack 关键帧、访问日志字段）与代码 `file:line`；证据不足时写明"待确认"，不靠猜。
 4. **六类分类法逐类排查**：按【分类法】六类逐类审视 ERROR/WARN（BUG / 业务阻断 / 权限阻断 / 工作流阻断 / 基础设施性能 / 第三方系统失败），取**最深业务根因**，并写明为何归此类而非他类。
@@ -46,9 +46,9 @@ description: 日志自动诊断 — 按 trace_id（或 --kw 关键词/业务单�
    python <skill 目录>/scripts/log-diagnose.py <trace_id> <time> [--kw <关键词>]... [--env prod|test]
    ```
    - 缺省取配置 `default_env`；切环境加 `--env <环境名>`。
-   - **按业务单号/关键词检索**：`--kw <业务单号> --kw <其他关键词>`（可多次，全部按 AND 命中；可与 trace_id 同给做 AND 收窄；位置参数易歧义时用 `--time` 显式给时间窗）。产物按关键词组合命名（`<query>.summary.txt` / `<query>.raw.json`）。典型场景：回调/异步链路报错后，按业务单号检索定位该笔业务的发起与关联 trace。
+   - **按业务单号/关键词检索**：`--kw <业务单号> --kw <其他关键词>`（可多次，全部按 AND 命中；可与 trace_id 同给做 AND 收窄；位置参数易歧义时用 `--time` 显式给时间窗）。产物按「关键词组合 + 时间窗」命名（`<query>.<时间窗>.summary.txt` / `<query>.<时间窗>.raw.json`），同关键词不同时间窗的复查落盘各自独立、不互相覆盖。典型场景：回调/异步链路报错后，按业务单号检索定位该笔业务的发起与关联 trace。
    - 查看可用环境：`python <skill 目录>/scripts/log-diagnose.py --list-envs`
-   - 脚本按**配置加载顺序**取配置：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/log-diagnose.config.json`（从当前工作目录向上查找，实现不同项目不同 Kibana 环境切换）；③ skill 同级默认 `log-diagnose.config.json`。配置均 gitignored，敏感凭据不入库，按 `references/config.example.json` 模板创建。**输出路径按配置来源决定**（与配置归属一致）：显式 `--config` → `~/Downloads/<env>/`（不再拼 `log-diagnosis` 段）；项目级配置 → `<项目根>/.tasks/log-diagnosis/<env>/`；全局默认 → `~/.claude/.tasks/log-diagnosis/<env>/`，产物为 `<trace_id>.summary.txt` 与 `.raw.json`；可用 `--out-dir <路径>` 显式覆盖。**凭据传输**：Kibana 地址建议用 `https://`（配置模板已用 https）；配成 `http://` 时 Basic 凭据将明文传输，脚本会打印告警。
+   - 脚本按**配置加载顺序**取配置：① `--config <路径>` 显式指定；② 项目级 `<项目根>/.claude/log-diagnose.config.json`（从当前工作目录向上查找，实现不同项目不同 Kibana 环境切换）；③ skill 同级默认 `log-diagnose.config.json`。配置均 gitignored，敏感凭据不入库，按 `references/config.example.json` 模板创建。**输出路径按配置来源决定**（与配置归属一致）：显式 `--config` → `~/Downloads/<env>/`（不再拼 `log-diagnosis` 段）；项目级配置 → `<项目根>/.tasks/log-diagnosis/<env>/`；全局默认 → `~/.claude/.tasks/log-diagnosis/<env>/`，产物为 `<query>.<时间窗>.summary.txt` 与同名 `.raw.json`（时间窗标识防同关键词不同窗口互相覆盖）；可用 `--out-dir <路径>` 显式覆盖。**凭据传输**：Kibana 地址建议用 `https://`（配置模板已用 https）；配成 `http://` 时 Basic 凭据将明文传输，脚本会打印告警。
    - 若提示"无日志命中"：确认时间窗已覆盖日志保留期（如 30 天）重试一次；仍无则向用户报告该 trace 未落当前环境（`<env>`）日志，停止。
    - 若提示配置缺失：向用户报告需创建配置（schema 见脚本报错或 `references/config.example.json`），停止。
 3. 读取 `summary.txt`：先看头部 `total_matched` 与截断告警；浏览"时序摘要"；重点读"全量 ERROR 消息"段。必要时读 `.raw.json` 取完整 message。
@@ -203,7 +203,7 @@ bug 描述（附带修复所需信息）：
 - `summary.txt` 的"时序摘要"每行已截断 msg 头至 240 字符；看完整内容读 `.raw.json` 对应条目。
 - **第三方请求体易漏**：时序摘要按 240 字符截断、`全量 ERROR` 段只含 ERROR 级，而第三方请求日志（如 HTTP 客户端埋点）往往是 INFO 级，其 `body=` 往往因此被截断/不出现。**请求体须从 `.raw.json` 找 HTTP 客户端埋点的完整 message**；响应体可从对应响应行或业务方"调用完毕"日志取。地址、请求体、响应体三者缺一不可。
 - 命中超过 `max_hits`（默认 2000）会被截断最早部分并告警——诊断聚焦"最新/失败点"，通常足够；若失败点被截断，扩大窗口分段重拉。
-- **脚本连续超时的降级路径**：单次请求超时受环境配置 `timeout`（缺省 120s）控制，超时自动重试一次；仍失败时可 curl 直接请求 Kibana 内部搜索接口复现取数——`POST <kibana host>/internal/search/es`，请求体 `{"params": {"index": <index_pattern>, "body": <与脚本一致的查询体>}}`，带 Basic 认证头与 `kbn-xsrf: true`，成功后手动按 `<query>.summary.txt` / `<query>.raw.json` 格式落盘再继续分析。**落盘路径用 Windows 侧可访问目录**（`$TEMP` 或产物目录）——Git Bash 的 `/tmp` 与 Windows Python 互不可见，经 /tmp 中转的文件 Python 读不到，需 `cygpath -w` 转换路径或先 `cp` 到 `$TEMP`。
+- **脚本连续超时的降级路径**：单次请求超时受环境配置 `timeout`（缺省 120s）控制，超时自动重试一次；仍失败时可 curl 直接请求 Kibana 内部搜索接口复现取数——`POST <kibana host>/internal/search/es`，请求体 `{"params": {"index": <index_pattern>, "body": <与脚本一致的查询体>}}`，带 Basic 认证头与 `kbn-xsrf: true`，成功后手动按 `<query>.<时间窗>.summary.txt` / `<query>.<时间窗>.raw.json` 格式落盘再继续分析。**落盘路径用 Windows 侧可访问目录**（`$TEMP` 或产物目录）——Git Bash 的 `/tmp` 与 Windows Python 互不可见，经 /tmp 中转的文件 Python 读不到，需 `cygpath -w` 转换路径或先 `cp` 到 `$TEMP`。
 - **从 `.raw.json` 提取字段值**（SQL 参数 / 请求体等）用 Python 内联脚本按条目解析提取，勿对整文件 Grep——日志行超长时输出会被截断或转存，来回取数反而更慢。
 - 仓库映射 stack 帧用 Grep 工具找类名所在 `.java`，Read 工具定位行号；行号以日志 stack 为准（线上版本可能与工作区有偏差，注明）。
 - **根因必须核对涉及代码当时的 commit**：`git log`/`git blame` 定位线上对应分支在故障时间点的版本，再接 `code-review` skill 检视该提交的 diff（取数脚本只按修订号取数与校验，判定仍由你完成）；无法追溯时须明说"未能核对"，防止用错误版本代码分析出错误根因。
