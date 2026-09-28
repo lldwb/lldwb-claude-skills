@@ -221,7 +221,7 @@ def mode_timeline(path, limit):
     n_user, n_ai, n_tool = 0, 0, 0
     for rec in iter_records(path):
         kind = rec.get("type")
-        ts = (rec.get("timestamp") or "")[11:19]
+        ts = (rec.get("timestamp") or "")[5:19].replace("T", " ")
         if kind == "user":
             for t in user_texts(rec):
                 t = clean_user_text(t)
@@ -257,7 +257,7 @@ def mode_transcript(path, limit):
         if kind in ("queue-operation", "system"):
             continue
         n += 1
-        ts = (rec.get("timestamp") or "")[11:19]
+        ts = (rec.get("timestamp") or "")[5:19].replace("T", " ")
         head = "\n### #%d [%s] %s%s" % (n, ts, (rec.get("message") or {}).get("role", kind),
                                        " <SIDECHAIN>" if rec.get("isSidechain") else "")
         content = (rec.get("message") or {}).get("content")
