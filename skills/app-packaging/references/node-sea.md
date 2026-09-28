@@ -78,6 +78,8 @@ signtool sign /fd SHA256 <产物名>.exe                   # Windows：可选，
 
 **硬约束**：跨平台生成时 `useCodeCache` 与 `useSnapshot` **必须为 false**——代码缓存与快照只能在与编译相同的平台上加载，跨平台产物会在启动时崩溃。另外**生成 blob 的 node 版本必须与底座二进制版本一致**（换平台时下载对应版本的 node）。
 
+**自编译基底（如换 small-icu，见 runtime-trimming.md）在 arm64 机器上交叉编译 x64 时，编译器必须钉死目标架构**：`CC="clang -arch x86_64"`、`CXX="clang++ -arch x86_64"`——node 的 make 构建在 mac 上从不主动传 `-arch`，原生构建靠「编译器默认 = host 架构」侥幸成立，交叉时缺了它编译器按 host 的 arm64 出码，产出 arm64 码冒名 x64 的废品；而自检跑在 arm64 机器上、arm64 码原生可跑，**自检拦不住它**（实测 `deps/zlib/cpu_features.c` 的 cpuid.h `#error` 是罕见的最后防线）。配套两个硬点：OpenSSL 交叉编译加 `--openssl-no-asm`（x86_64 汇编的内联寄存器约束在 arm64 host 上不合法）；产物名按**基底**架构取名，别用构建机的 `process.arch`（交叉时会错标）。
+
 ## 签名（顺序不可颠倒）
 
 | 平台 | 注入前 | 注入后 |

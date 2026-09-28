@@ -34,6 +34,10 @@
 2. **`afterPack` 钩子**：打包后删运行时组件（软渲染、WebGPU 编译器这类语义上可弃的），**按目标平台分支**（各平台文件不同名：`.dll` / `.dylib` / `.so` + 各自的 `_icd.json`）。删除对象要先在该平台发行包里确认实存（用下面的 Range 探针查包内清单），删错或删漏以日志为准——构建日志里应有删除清单，自检脚本应核对「该删的确实没了」。
 3. **`compression`（根级）**：**各 target 的默认值差别很大，必须显式设**。实测：不设时 AppImage 走 mksquashfs 默认 **gzip**（比同内容的 deb 胖 20+ MB，deb 默认 xz）、dmg 走 UDZO（zlib）；根级设 `maximum` 后 AppImage 走 xz、dmg 自动变 UDBZ（bzip2）；NSIS 载荷本来就是 LZMA / 7z、deb 本来就是 xz，不受影响。
 
+## 换小 ICU 的 node 基底（单文件 / SEA 产物）
+
+单文件产物体积超限的常见主因是官方 node 底座内嵌的 **full-icu 数据（约 28 MB）**——先全仓 grep 证实**零 Intl 使用**（`Intl.`、`toLocaleString` 等 `toLocale*`、`localeCompare`），再从源码编译小 ICU 基底替换：`./configure --with-intl=small-icu && make -j`（CI 上做并缓存基底产物，首次全量约 40~80 分钟）。这是**行为等价前提下的瘦身**：代码不碰 Intl API 时 locale 数据用不上，产物可降 20~35 MB。三件配套：① 与 node-sea.md 的注入链路衔接（自编译基底的注入坑见其「已知坑」）；② 交叉编译自编译基底要钉 `-arch`（见 node-sea.md「平台支持与交叉构建」）；③ 零 Intl 的证据要写进提交说明——它是「行为不变」论证的一部分，不是口头保证。
+
 ## 删运行时组件必须有验证护栏，且知道护栏的边界
 
 - **启动冒烟开关**：给应用加 `--smoke-test` 隐藏开关——窗口 / 界面就绪后打印一行结构化结果（窗口尺寸、界面关键元素、真实 IPC 往返）并 `exit 0`；失败或超时 `exit 1`。CI 每个平台构建后跑一次、**fail 就不上传**。判据设计要点：不依赖会随环境变的量（如联网数据行数）、单实例锁拿不到时报失败而非静默退出、输出直写 fd 1（`console.log` 后紧跟 `app.exit()` 会丢输出）。
